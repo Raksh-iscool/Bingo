@@ -1,38 +1,45 @@
-// pages/api/auth/youtube/callback.ts
-import { type NextApiRequest, type NextApiResponse } from "next";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { getTokenFromCode } from "@/server/services/youtube-service";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-export default async function handler(
-    req: NextApiRequest,
-    res: NextApiResponse
-) {
+export async function GET(request: NextRequest) {
     const session = await auth.api.getSession({
         headers: await headers()
     });
     
     if (!session?.user) {
-        return res.redirect(`/login?error=Unauthorized&callbackUrl=${encodeURIComponent('/youtube/connect')}`);
+        return NextResponse.redirect(
+            new URL(`/login?error=Unauthorized&callbackUrl=${encodeURIComponent('/youtube/connect')}`, request.url)
+        );
     }
     
-    const { code, state } = req.query;
+    const searchParams = request.nextUrl.searchParams;
+    const code = searchParams.get('code');
+    const state = searchParams.get('state');
     
-    if (!code || typeof code !== 'string') {
-        return res.redirect('/youtube/connect?error=MissingAuthCode');
+    if (!code) {
+        return NextResponse.redirect(
+            new URL('/youtube/connect?error=MissingAuthCode', request.url)
+        );
     }
     
     try {
         // The state parameter should contain the userId or other relevant data
-        const userId = state && typeof state === 'string' ? state : session.user.id;
+        const userId = state ?? session.user.id;
         
         // Exchange the code for tokens
         await getTokenFromCode(code, userId);
         
         // Redirect to success page
-        res.redirect('/youtube/dashboard?status=connected');
+        return NextResponse.redirect(
+            new URL('/youtube/dashboard?status=connected', request.url)
+        );
     } catch (error) {
         console.error('Error during YouTube authentication:', error);
-        res.redirect('/youtube/connect?error=AuthenticationFailed');
+        return NextResponse.redirect(
+            new URL('/youtube/connect?error=AuthenticationFailed', request.url)
+        );
     }
 }
