@@ -10,6 +10,9 @@ export const env = createEnv({
     DATABASE_URL: z.string().url(),
     GOOGLE_GENERATIVE_AI_API_KEY: z.string(),
     OPENROUTER_API_KEY: z.string(),
+    YOUTUBE_CLIENT_ID: z.string(),
+    YOUTUBE_CLIENT_SECRET: z.string(),
+    YOUTUBE_REDIRECT_URI: z.string().url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -35,6 +38,9 @@ export const env = createEnv({
     GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     OPENROUTER_API_KEY: process.env.DEEPSEEK_OPENROUTER_API_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    YOUTUBE_CLIENT_ID: process.env.YOUTUBE_CLIENT_ID,
+    YOUTUBE_CLIENT_SECRET: process.env.YOUTUBE_CLIENT_SECRET,
+    YOUTUBE_REDIRECT_URI: process.env.YOUTUBE_REDIRECT_URI,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**

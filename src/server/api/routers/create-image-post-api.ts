@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
-import { publicProcedure } from "@/server/api/trpc";
+import { protectedProcedure } from "@/server/api/trpc";
 
 const SocialPlatform = z.enum([
   "twitter",
@@ -18,7 +18,7 @@ const ImageSize = z.enum([
   "twitter", // 1600x900 - Twitter optimal
 ]);
 
-export const generateSocialImage = publicProcedure
+export const generateSocialImage = protectedProcedure
   .input(
     z.object({
       platform: SocialPlatform,
