@@ -65,24 +65,22 @@ const Landing = () => {
     useEffect(() => {
         let currentIndex = 0;
         const interval = setInterval(() => {
-            if (currentIndex < images.length) {
-                setImages(prevImages => {
-                    const newImages = [...prevImages];
-                    if (currentIndex >= 12) {
-                        const firstVisibleIndex = newImages.findIndex(img => img.visible);
-                        if (firstVisibleIndex !== -1 && newImages[firstVisibleIndex]) {
-                            newImages[firstVisibleIndex].visible = false;
-                        }
+            setImages(prevImages => {
+                const newImages = [...prevImages];
+                if (currentIndex >= 18) {
+                    const firstVisibleIndex = newImages.findIndex(img => img.visible);
+                    if (firstVisibleIndex !== -1 && newImages[firstVisibleIndex]) {
+                        newImages[firstVisibleIndex].visible = false;
                     }
-                    const currentImage = newImages[currentIndex];
-                    if (currentImage) {
-                        currentImage.visible = true;
-                    }
-                    return newImages;
-                });
-                currentIndex++;
-            }
-        }, 1000);
+                }
+                const currentImage = newImages[currentIndex];
+                if (currentImage) {
+                    currentImage.visible = true;
+                }
+                currentIndex = (currentIndex + 1) % newImages.length; // Reset index to loop infinitely
+                return newImages;
+            });
+        }, 1500);
 
         return () => clearInterval(interval);
     }, [images.length]);

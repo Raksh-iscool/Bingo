@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { google } from 'googleapis';
 import { desc, eq } from 'drizzle-orm';
 import { db } from '@/server/db';
@@ -12,9 +8,9 @@ import { Readable } from 'stream';
 import type { OAuth2Client, Credentials } from 'google-auth-library';
 
 // YouTube API credentials - store these in your environment variables
-const CLIENT_ID = env.YOUTUBE_CLIENT_ID as string;
-const CLIENT_SECRET = env.YOUTUBE_CLIENT_SECRET as string;
-const REDIRECT_URI = (env.YOUTUBE_REDIRECT_URI ?? 'http://localhost:3000/api/youtube/oauthcallback') as string;
+const CLIENT_ID = env.YOUTUBE_CLIENT_ID;
+const CLIENT_SECRET = env.YOUTUBE_CLIENT_SECRET;
+const REDIRECT_URI = env.YOUTUBE_REDIRECT_URI ?? 'http://localhost:3000/api/youtube/oauthcallback';
 
 // Define interface for token storage
 interface YouTubeToken {
@@ -55,18 +51,18 @@ export async function saveToken(token: Credentials, userId: string): Promise<voi
   if (existingToken) {
     await db.update(youtubeTokens)
       .set({
-        accessToken: token.access_token as string,
+        accessToken: token.access_token!,
         refreshToken: token.refresh_token ?? existingToken.refreshToken, // Keep existing refresh_token if new one isn't provided
-        expiryDate: new Date(token.expiry_date as number),
+        expiryDate: new Date(token.expiry_date!),
         updatedAt: new Date()
       })
       .where(eq(youtubeTokens.userId, userId));
   } else {
     await db.insert(youtubeTokens).values({
       userId,
-      accessToken: token.access_token as string,
-      refreshToken: token.refresh_token as string,
-      expiryDate: new Date(token.expiry_date as number)
+      accessToken: token.access_token!,
+      refreshToken: token.refresh_token!,
+      expiryDate: new Date(token.expiry_date!)
     });
   }
 }
@@ -195,8 +191,8 @@ export async function uploadVideo({
       .returning();
     
     // Upload thumbnail if provided
-    if (thumbnailBuffer && videoId) {
-      await uploadThumbnail(videoId as string, thumbnailBuffer, userId);
+    if (thumbnailBuffer) {
+      await uploadThumbnail(videoId, thumbnailBuffer, userId);
     }
     
     return {
