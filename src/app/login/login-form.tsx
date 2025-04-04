@@ -1,14 +1,24 @@
+'use client'
+
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-
+import { authClient as client } from "@/lib/auth-client";
 import { CarouselPlugin } from "./carouselcomp"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
+
 export function LoginForm({
     className,
     ...props
 }: React.ComponentProps<"div">) {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
+
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
             <Card className="overflow-hidden">
@@ -28,6 +38,8 @@ export function LoginForm({
                                     type="email"
                                     placeholder="m@example.com"
                                     required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                 />
                             </div>
                             <div className="grid gap-2">
@@ -40,9 +52,36 @@ export function LoginForm({
                                         Forgot your password?
                                     </a>
                                 </div>
-                                <Input id="password" type="password" required />
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
                             </div>
-                            <Button type="submit" className="w-full">
+                            <Button
+                                type="submit"
+                                className="w-full"
+                                onClick={async (e) => {
+                                    e.preventDefault()
+                                    await client.signIn.email(
+                                        {
+                                            email: email,
+                                            password: password,
+                                        },
+                                        {
+                                            onRequest: () => {
+                                                setLoading(true);
+                                            },
+                                            onResponse: () => {
+                                                setLoading(false);
+                                                router.push("/dashboard");
+                                            },
+                                        },
+                                    );
+                                }}
+                            >
                                 Login
                             </Button>
                             <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
