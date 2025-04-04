@@ -10,7 +10,10 @@ import {
   updateVideo,
   getUserVideos,
   getVideo,
-  getVideoStatistics
+  getVideoStatistics,
+  checkAuthentication,
+  getAllVideosWithStatistics,
+  getChannelStatistics
 } from "@/server/services/youtube-service";
 import { TRPCError } from "@trpc/server";
  
@@ -41,6 +44,12 @@ export const youtubeRouter = createTRPCRouter({
     .query(({ ctx }) => {
       const userId = ctx.session.user.id;
       return { url: getAuthUrl(userId) };
+    }),
+  
+    checkAuthentication: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userId = ctx.session.user.id;
+      return await checkAuthentication(userId);
     }),
   
   // Get user's videos
@@ -122,5 +131,18 @@ export const youtubeRouter = createTRPCRouter({
         title: input.title, // Explicitly provide title to satisfy type requirement
         userId
       });
+    }),
+
+    // Add these to your youtubeRouter
+    getAllVideosWithStatistics: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userId = ctx.session.user.id;
+      return await getAllVideosWithStatistics(userId);
+    }),
+
+    getChannelStatistics: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userId = ctx.session.user.id;
+      return await getChannelStatistics(userId);
     }),
 });

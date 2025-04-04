@@ -23,7 +23,10 @@ interface YouTubeToken {
 const SCOPES = [
     'https://www.googleapis.com/auth/youtube.upload',
     'https://www.googleapis.com/auth/youtube',
-    'https://www.googleapis.com/auth/youtube.force-ssl'
+    'https://www.googleapis.com/auth/youtube.force-ssl',
+    'https://www.googleapis.com/auth/yt-analytics.readonly',
+    'https://www.googleapis.com/auth/yt-analytics-monetary.readonly',
+    'https://www.googleapis.com/auth/youtubepartner',
 ];
 
 // Create OAuth2 client
@@ -31,14 +34,43 @@ export function getOAuth2Client(): OAuth2Client {
   return new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 }
 
+export async function checkAuthentication(userId: string): Promise<{ isAuthenticated: boolean }> {
+  try {
+    const token = await db.query.youtubeTokens.findFirst({
+      where: eq(youtubeTokens.userId, userId)
+    });
+    
+    if (!token) {
+      return { isAuthenticated: false };
+    }
+    
+    // Check if token is expired and try to refresh
+    if (token.expiryDate.getTime() < Date.now()) {
+      const oauth2Client = getOAuth2Client();
+      oauth2Client.setCredentials({
+        refresh_token: token.refreshToken
+      });
+      
+      try {
+        await oauth2Client.refreshAccessToken();
+        return { isAuthenticated: true };
+      } catch {
+        return { isAuthenticated: false };
+      }
+    }
+    
+    return { isAuthenticated: true };
+  } catch {
+    return { isAuthenticated: false };
+  }
+}
+
 // Get authorization URL for the given user
 export function getAuthUrl(userId: string, state?: string): string {
   const oauth2Client = getOAuth2Client();
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
-    prompt: 'consent', // Force to always get refresh_token
     scope: SCOPES,
-    state: state ?? userId, // Pass userId as state to retrieve it in callback
   });
 }
 
@@ -51,18 +83,22 @@ export async function saveToken(token: Credentials, userId: string): Promise<voi
   if (existingToken) {
     await db.update(youtubeTokens)
       .set({
+
         accessToken: token.access_token!,
         refreshToken: token.refresh_token ?? existingToken.refreshToken, // Keep existing refresh_token if new one isn't provided
         expiryDate: new Date(token.expiry_date!),
+
         updatedAt: new Date()
       })
       .where(eq(youtubeTokens.userId, userId));
   } else {
     await db.insert(youtubeTokens).values({
       userId,
+
       accessToken: token.access_token!,
       refreshToken: token.refresh_token!,
       expiryDate: new Date(token.expiry_date!)
+
     });
   }
 }
@@ -190,10 +226,12 @@ export async function uploadVideo({
       })
       .returning();
     
+
     // Upload thumbnail if provided
     if (thumbnailBuffer) {
       await uploadThumbnail(videoId, thumbnailBuffer, userId);
     }
+
     
     return {
       success: true,
@@ -361,6 +399,144 @@ export async function getVideoStatistics(videoId: string, userId: string) {
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
       message: `Failed to retrieve video statistics: ${error instanceof Error ? error.message : String(error)}`,
+    });
+  }
+}
+
+// Get channel statistics
+export async function getChannelStatistics(userId: string) {
+  const oauth2Client = await getAuthenticatedClient(userId);
+  const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
+  
+  try {
+    // First get the channel ID for the authenticated user
+    const channelResponse = await youtube.channels.list({
+      part: ['id', 'snippet', 'statistics', 'contentDetails'],
+      mine: true
+    });
+    
+    if (!channelResponse.data.items || channelResponse.data.items.length === 0) {
+      throw new Error('No channel found for authenticated user');
+    }
+    
+    const channelData = channelResponse.data.items[0];
+    
+    // Get analytics data for the channel if possible
+    let analyticsData = null;
+    try {
+      const youtubeAnalytics = google.youtubeAnalytics({ version: 'v2', auth: oauth2Client });
+      
+      // Get last 30 days of data
+      const endDate = new Date().toISOString().split('T')[0]; // Today in YYYY-MM-DD
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+      const startDateString = startDate.toISOString().split('T')[0]; // 30 days ago
+      
+      const analyticsResponse = await youtubeAnalytics.reports.query({
+        dimensions: 'day',
+        ids: `channel==${channelData?.id ?? ''}`,
+        metrics: 'views,estimatedMinutesWatched,averageViewDuration,likes,dislikes,subscribersGained,subscribersLost',
+        startDate: startDateString,
+        endDate: endDate,
+        sort: 'day'
+      });
+      
+      analyticsData = analyticsResponse.data;
+    } catch (analyticsError) {
+      console.warn('Could not fetch analytics data:', analyticsError);
+      // Continue without analytics data
+    }
+    
+    return {
+      channel: channelData,
+      analytics: analyticsData
+    };
+  } catch (error) {
+    console.error('Error getting channel statistics:', error);
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: `Failed to retrieve channel statistics: ${error instanceof Error ? error.message : String(error)}`,
+    });
+  }
+}
+
+// Get all videos with their statistics
+export async function getAllVideosWithStatistics(userId: string) {
+  // First get all videos from our database
+  const videos = await getUserVideos(userId);
+  
+  if (!videos || videos.length === 0) {
+    return { videos: [] };
+  }
+  
+  // Get authenticated client
+  const oauth2Client = await getAuthenticatedClient(userId);
+  const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
+  
+  try {
+    // Get statistics for all videos in batches of 50 (YouTube API limit)
+    const allVideoIds = videos.map(video => video.youtubeId);
+    const videoDetailsMap = new Map();
+    
+    // Process in batches of 50
+    for (let i = 0; i < allVideoIds.length; i += 50) {
+      const batchIds = allVideoIds.slice(i, i + 50);
+      
+      const response = await youtube.videos.list({
+        id: batchIds,
+        part: ['statistics', 'snippet', 'status', 'contentDetails']
+      });
+      
+      if (response.data.items) {
+        for (const item of response.data.items) {
+          if (item.id) {
+            videoDetailsMap.set(item.id, item);
+          }
+        }
+      }
+    }
+    
+    // Merge our database info with YouTube API info
+    const enrichedVideos = videos.map(video => {
+      const youtubeDetails = videoDetailsMap.get(video.youtubeId) ?? null;
+      return {
+        ...video,
+        youtubeDetails
+      };
+    });
+    
+    // Get aggregate statistics
+    const totalViews = enrichedVideos.reduce((sum, video) => {
+      return sum + (parseInt(String(video.youtubeDetails?.statistics?.viewCount ?? '0'), 10) || 0);
+    }, 0);
+    
+    const totalLikes = enrichedVideos.reduce((sum, video) => {
+      return sum + (parseInt(String(video.youtubeDetails?.statistics?.likeCount ?? '0'), 10) || 0);
+    }, 0);
+    
+    const totalComments = enrichedVideos.reduce((sum, video) => {
+      return sum + (parseInt(String(video.youtubeDetails?.statistics?.commentCount ?? '0'), 10) || 0);
+    }, 0);
+    
+    // Sort by most recent first
+    enrichedVideos.sort((a, b) => {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+    
+    return {
+      videos: enrichedVideos,
+      statistics: {
+        totalVideos: enrichedVideos.length,
+        totalViews,
+        totalLikes,
+        totalComments
+      }
+    };
+  } catch (error) {
+    console.error('Error getting all videos with statistics:', error);
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: `Failed to retrieve videos with statistics: ${error instanceof Error ? error.message : String(error)}`,
     });
   }
 }

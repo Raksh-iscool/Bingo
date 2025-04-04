@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     
     if (!code) {
         return NextResponse.redirect(
-            new URL('/youtube/connect?error=MissingAuthCode', request.url)
+            new URL('/youtube?error=MissingAuthCode', request.url)
         );
     }
     
@@ -34,12 +34,12 @@ export async function GET(request: NextRequest) {
         
         // Redirect to success page
         return NextResponse.redirect(
-            new URL('/youtube/dashboard?status=connected', request.url)
+            new URL('/youtube?status=connected', request.url)
         );
     } catch (error) {
         console.error('Error during YouTube authentication:', error);
         return NextResponse.redirect(
-            new URL('/youtube/connect?error=AuthenticationFailed', request.url)
+            new URL('/youtube?error=AuthenticationFailed', request.url)
         );
     }
 }
