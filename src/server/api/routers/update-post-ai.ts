@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { publicProcedure } from "@/server/api/trpc";
+import { protectedProcedure } from "@/server/api/trpc";
 import { updateWithGemini } from "../models/gemini-handler";
 import { updateWithDeepseek } from "../models/deepseek-handler";
 
@@ -13,7 +13,7 @@ const SocialPlatform = z.enum([
 
 const AIModel = z.enum(["gemini", "deepseek"]);
 
-export const updateSocialPost = publicProcedure
+export const updateSocialPost = protectedProcedure
   .input(
     z.object({
       platform: SocialPlatform,

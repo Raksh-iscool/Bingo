@@ -14,7 +14,7 @@ import type { OAuth2Client, Credentials } from 'google-auth-library';
 // YouTube API credentials - store these in your environment variables
 const CLIENT_ID = env.YOUTUBE_CLIENT_ID as string;
 const CLIENT_SECRET = env.YOUTUBE_CLIENT_SECRET as string;
-const REDIRECT_URI = (env.YOUTUBE_REDIRECT_URI ?? 'http://localhost:3000/api/auth/youtube/callback') as string;
+const REDIRECT_URI = (env.YOUTUBE_REDIRECT_URI ?? 'http://localhost:3000/api/youtube/oauthcallback') as string;
 
 // Define interface for token storage
 interface YouTubeToken {
