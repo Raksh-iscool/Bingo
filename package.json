@@ -21,13 +21,14 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@ai-sdk/google": "^1.2.5",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "^5.69.0",
     "@trpc/client": "^11.0.0",
     "@trpc/react-query": "^11.0.0",
     "@trpc/server": "^11.0.0",
-    "better-auth": "^1.2.5",
     "ai": "^4.2.11",
+    "better-auth": "^1.2.5",
     "drizzle-orm": "^0.41.0",
     "next": "^15.2.3",
     "postgres": "^3.4.4",
