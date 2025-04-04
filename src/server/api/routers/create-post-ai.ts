@@ -1,11 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { generateText } from "ai";
-import { google } from "@ai-sdk/google";
+import { protectedProcedure } from "@/server/api/trpc";
+import { generateWithGemini } from "../models/gemini-handler";
+import { generateWithDeepseek } from "../models/deepseek-handler";
 
-import { publicProcedure } from "@/server/api/trpc";
-
-// Define supported platforms
 const SocialPlatform = z.enum([
   "twitter",
   "linkedin",
@@ -13,11 +11,14 @@ const SocialPlatform = z.enum([
   "instagram",
 ]);
 
-export const generateSocialPost = publicProcedure
+const AIModel = z.enum(["gemini", "deepseek"]);
+
+export const generateSocialPost = protectedProcedure
   .input(
     z.object({
       platform: SocialPlatform,
       prompt: z.string().min(1, "Prompt cannot be empty"),
+      model: AIModel.default("gemini"),
     }),
   )
   .output(
@@ -49,25 +50,23 @@ export const generateSocialPost = publicProcedure
 
       Prompt: ${input.prompt}`;
 
-      const { text } = await generateText({
-        model: google("gemini-1.5-flash"),
-        prompt: prompt,
-        temperature: 0.7, // Higher temperature for more creative outputs
-        maxTokens: 1000,
-      });
+      let text: string | null = null;
+
+      if (input.model === "gemini") {
+        text = await generateWithGemini(prompt);
+      } else {
+        text = await generateWithDeepseek(prompt);
+      }
 
       if (!text) {
-        console.error("No content generated");
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to generate social media content",
         });
       }
 
-      // Clean up the response
       const content = text.trim();
 
-      // Platform-specific validation
       if (input.platform === "twitter" && content.length > 280) {
         throw new TRPCError({
           code: "BAD_REQUEST",
