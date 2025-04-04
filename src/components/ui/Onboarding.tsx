@@ -28,22 +28,26 @@ const Onboarding = () => {
         }
     ];
 
-    const handleCardClick = (platformName: string) => {
+    const handleCardClick = async (platformName: string) => {
         setSelectedPlatform(platformName);
-        fetchCredentials(platformName);
+        await fetchCredentials(platformName); // Added `await` to handle the promise
         setIsDialogOpen(true);
     };
 
-    const fetchCredentials = async (platformName: string) => {
+    const fetchCredentials = async (platformName: string): Promise<void> => {
         try {
             const response = await fetch(`/api/credentials?platform=${platformName}`);
-            const data = await response.json();
-            setCredentials(data);
+            const data = (await response.json()) as { username: string; password: string }; // Explicit type assertion
+            setCredentials(data); // Safe assignment
         } catch (error) {
             console.error("Failed to fetch credentials:", error);
             setCredentials(null);
         }
     };
+
+    useEffect(() => {
+        // Example usage of useEffect
+    }, []);
 
     return (
         <div>
@@ -58,7 +62,7 @@ const Onboarding = () => {
                 ))}
             </div>
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={(isOpen) => setIsDialogOpen(isOpen)}> {/* Explicit type-safe handler */}
                 <DialogContent>
                     <h3 className="text-lg font-bold">{selectedPlatform}</h3>
                     {credentials ? (
