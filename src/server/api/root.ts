@@ -2,6 +2,7 @@ import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { generateSocialPost } from "@/server/api/routers/create-post-ai";
 import { updateSocialPost } from "@/server/api/routers/update-post-ai";
 import { generateSocialImage } from "@/server/api/routers/create-image-post-api";
+import {twitterRouter} from "@/server/api/routers/twitter"; // import {twitterRouter} from @/server/api/routers/twitter.ts
 
 /**
  * This is the primary router for your server.
@@ -11,7 +12,8 @@ import { generateSocialImage } from "@/server/api/routers/create-image-post-api"
 export const appRouter = createTRPCRouter({
     createPost: generateSocialPost,
     updatePost: updateSocialPost,
-    generateImagePost: generateSocialImage
+    generateImagePost: generateSocialImage,
+    twitter: twitterRouter, // add twitterRouter to the appRouter objec
 });
 
 // export type definition of API
