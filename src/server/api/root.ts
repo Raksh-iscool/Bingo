@@ -2,6 +2,7 @@ import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { generateSocialPost } from "@/server/api/routers/create-post-ai";
 import { updateSocialPost } from "@/server/api/routers/update-post-ai";
 import { generateSocialImage } from "@/server/api/routers/create-image-post-api";
+import { youtubeRouter } from "./routers/youtube-api";
 
 /**
  * This is the primary router for your server.
@@ -11,9 +12,10 @@ import { generateSocialImage } from "@/server/api/routers/create-image-post-api"
 export const appRouter = createTRPCRouter({
     createPost: generateSocialPost,
     updatePost: updateSocialPost,
+    generateYoutube:youtubeRouter,
     generateImagePost: generateSocialImage
 });
-
+ 
 // export type definition of API
 export type AppRouter = typeof appRouter;
 
