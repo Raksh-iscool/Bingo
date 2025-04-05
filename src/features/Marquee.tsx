@@ -32,7 +32,7 @@ const socialLinks: SocialLink[] = [
 const Marquee = () => {
   return (
     <div className="py-2">
-      <FastMarquee repeat={50} gradient={true} speed={40}>
+      <FastMarquee gradient={true} speed={40}>
         {socialLinks.map((social, index) => (
           <a
             key={index}
