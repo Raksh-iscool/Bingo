@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import {
@@ -10,10 +7,13 @@ import {
   updateVideo,
   getUserVideos,
   getVideo,
-  getVideoStatistics
+  getVideoStatistics,
+  checkAuthentication,
+  getAllVideosWithStatistics,
+  getChannelStatistics
 } from "@/server/services/youtube-service";
 import { TRPCError } from "@trpc/server";
-
+ 
 // Define input validation schemas
 const uploadVideoSchema = z.object({
   videoBuffer: z.instanceof(Buffer),
@@ -38,9 +38,15 @@ export const youtubeRouter = createTRPCRouter({
   
   // Get auth URL for YouTube integration
   getAuthUrl: protectedProcedure
-    .query(({ ctx }) => {
+    .query(() => {
+      // const userId = ctx.session.user.id;
+      return { url: getAuthUrl() };
+    }),
+  
+    checkAuthentication: protectedProcedure
+    .query(async ({ ctx }) => {
       const userId = ctx.session.user.id;
-      return { url: getAuthUrl(userId) };
+      return await checkAuthentication(userId);
     }),
   
   // Get user's videos
@@ -122,5 +128,18 @@ export const youtubeRouter = createTRPCRouter({
         title: input.title, // Explicitly provide title to satisfy type requirement
         userId
       });
+    }),
+
+    // Add these to your youtubeRouter
+    getAllVideosWithStatistics: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userId = ctx.session.user.id;
+      return await getAllVideosWithStatistics(userId);
+    }),
+
+    getChannelStatistics: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userId = ctx.session.user.id;
+      return await getChannelStatistics(userId);
     }),
 });

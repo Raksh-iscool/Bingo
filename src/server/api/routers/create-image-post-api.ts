@@ -3,7 +3,7 @@ import { z } from "zod";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import { protectedProcedure } from "@/server/api/trpc";
-
+ 
 const SocialPlatform = z.enum([
   "twitter",
   "linkedin",

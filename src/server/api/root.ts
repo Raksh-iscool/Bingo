@@ -3,6 +3,7 @@ import { generateSocialPost } from "@/server/api/routers/create-post-ai";
 import { updateSocialPost } from "@/server/api/routers/update-post-ai";
 import { generateSocialImage } from "@/server/api/routers/create-image-post-api";
 import {twitterRouter} from "@/server/api/routers/twitter"; // import {twitterRouter} from @/server/api/routers/twitter.ts
+import { youtubeRouter } from "@/server/api/routers/youtube-api";
 
 /**
  * This is the primary router for your server.
