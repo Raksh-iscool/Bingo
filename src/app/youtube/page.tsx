@@ -29,27 +29,12 @@ import {
   CheckCircle, 
   XCircle, 
   Play, 
-  BarChart, TrendingUp, Users, Eye, ThumbsUp, MessageCircle, 
   Clock, 
   ExternalLink, 
   Upload, 
   Plus,
   Image as ImageIcon,
-  Tag,
-  Lock
 } from 'lucide-react';
-
-// Define types for our video data
-interface YouTubeVideo {
-  id: number;
-  youtubeId: string;
-  title: string;
-  description: string | null;
-  thumbnailUrl: string | null;
-  privacyStatus: 'private' | 'public' | 'unlisted';
-  videoUrl: string;
-  createdAt: Date;
-}
 
 export default function YouTubeConnector() {
   const [isLoading, setIsLoading] = useState(true);
@@ -81,28 +66,6 @@ export default function YouTubeConnector() {
   const videosQuery = api.youtube.getUserVideos.useQuery(undefined, {
     enabled: authStatusQuery.data?.isAuthenticated === true,
     refetchOnWindowFocus: false,
-  });
-  
-  // Upload video mutation
-  const uploadVideoMutation = api.youtube.uploadVideo.useMutation({
-    onSuccess: () => {
-      // Reset form and close dialog
-      setVideoFile(null);
-      setThumbnailFile(null);
-      setTitle('');
-      setDescription('');
-      setPrivacyStatus('private');
-      setTags('');
-      setUploadProgress(false);
-      setUploadDialogOpen(false);
-      
-      // Refetch videos to show the new upload
-      void videosQuery.refetch();
-    },
-    onError: (error) => {
-      setUploadError(error.message);
-      setUploadProgress(false);
-    }
   });
   
   // Function to handle OAuth redirect
@@ -162,8 +125,6 @@ export default function YouTubeConnector() {
         const errorData = await response.json() as { message?: string };
         throw new Error(errorData.message ?? 'Failed to upload video');
       }
-      
-      const result = await response.json() as { message: string; videoId?: string };
       
       // Manual success handling
       setVideoFile(null);
