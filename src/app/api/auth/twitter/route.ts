@@ -14,7 +14,7 @@ export async function GET() {
 
   // 2. Generate random state
   const state = crypto.randomBytes(16).toString('hex');
-
+ 
   // 3. Build authorization URL (matches working pattern)
   const authUrl = new URL('https://x.com/i/oauth2/authorize');
   authUrl.searchParams.append('response_type', 'code');
