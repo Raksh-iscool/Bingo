@@ -48,6 +48,16 @@ const Onboarding = () => {
     }
   }
 
+  // LinkedIn connection logic
+  const handleLinkedinConnect = async () => {
+    try {
+      // Redirect to our backend auth route
+      window.location.href = "/api/auth/linkedin";
+    } catch (error) {
+      console.error("LinkedIn auth error:", error);
+    }
+  };
+
   useEffect(() => {
     if (twitterAuthStatusQuery?.data?.isValid) {
       setIsConnected(true)
@@ -67,6 +77,11 @@ const Onboarding = () => {
       platformName: "Twitter",
       imageUrl: "https://img.icons8.com/?size=100&id=6Fsj3rv2DCmG&format=png&color=000000",
       color: "bg-blue-400",
+    },
+    {
+      platformName: "LinkedIn",
+      imageUrl: "https://img.icons8.com/?size=100&id=447&format=png&color=000000",
+      color: "bg-blue-700",
     },
     // Add more platforms as needed
   ]
@@ -171,6 +186,17 @@ const Onboarding = () => {
               >
                 {isLoading ? "Loading..." : isConnected ? "Connected" : "Connect to Twitter"}
               </Button>
+            </div>
+          ) : selectedPlatform === "LinkedIn" ? (
+            <div className="flex flex-col items-center py-4">
+              <div>Checking connection status...</div>
+              <div className="text-green-600 font-semibold">Connected to LinkedIn</div>
+              <button
+                onClick={handleLinkedinConnect}
+                className="rounded-full bg-[#1DA1F2] px-6 py-3 font-semibold text-white hover:bg-[#1a8cd8] disabled:opacity-50"
+              >
+                Connect to LinkedIn
+              </button>
             </div>
           ) : (
             <div className="flex justify-center py-8">

@@ -10,12 +10,18 @@ export const twitterScheduleRouter = createTRPCRouter({
     scheduleTweet: protectedProcedure
         .input(z.object({
             text: z.string().min(1).max(280),
-            scheduledFor: z.date()
+            scheduledFor: z.string() // Accept string input for date
         }))
         .mutation(async ({ input, ctx }) => {
             try {
                 const userId = ctx.session?.user.id;
                 if (!userId) throw new Error("User not authenticated");
+                
+                // Convert scheduledFor to a Date object
+                const scheduledForDate = new Date(input.scheduledFor);
+                if (isNaN(scheduledForDate.getTime())) {
+                    throw new Error("Invalid date format");
+                }
                 
                 // Check if user has Twitter auth
                 const token = await db.query.twitterTokens.findFirst({
@@ -28,7 +34,7 @@ export const twitterScheduleRouter = createTRPCRouter({
                 
                 // Make sure scheduled time is in the future
                 const now = new Date();
-                if (input.scheduledFor <= now) {
+                if (scheduledForDate <= now) {
                     throw new Error("Scheduled time must be in the future");
                 }
                 
@@ -38,10 +44,10 @@ export const twitterScheduleRouter = createTRPCRouter({
                     .values({
                         userId,
                         content: input.text,
-                        scheduledFor: input.scheduledFor,
+                        scheduledFor: scheduledForDate,
                         status: "scheduled",
                         createdAt: now,
-                    })
+                    }) 
                     .returning();
                 
                 if (!scheduledTweet) {
@@ -50,7 +56,7 @@ export const twitterScheduleRouter = createTRPCRouter({
                     
                 // Create the schedule in QStash
                 const scheduleResult = await scheduleTweet({
-                    scheduledFor: input.scheduledFor,
+                    scheduledFor: scheduledForDate,
                     scheduledTweetId: scheduledTweet.id,
                     userId,
                     text: input.text,
@@ -77,7 +83,7 @@ export const twitterScheduleRouter = createTRPCRouter({
                     success: true,
                     scheduledTweetId: scheduledTweet.id,
                     scheduleId: scheduleResult.scheduleId,
-                    scheduledFor: input.scheduledFor,
+                    scheduledFor: scheduledForDate,
                 };
             } catch (error) {
                 console.error("Tweet scheduling failed:", error);
