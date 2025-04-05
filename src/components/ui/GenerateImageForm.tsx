@@ -11,6 +11,7 @@ const GenerateImageForm = () => {
   const [prompt, setPrompt] = useState("");
   const [size, setSize] = useState<"square" | "portrait" | "landscape" | "twitter">("square");
   const [style, setStyle] = useState("");
+  const [contentId, setContentId] = useState<number | null>(null); // Add contentId state
   const [result, setResult] = useState<{
     imageBase64: string;
     mimeType: string;
@@ -30,12 +31,12 @@ const GenerateImageForm = () => {
       setIsLoading(false);
     }
   });
-
+ 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-    generateImage.mutate({ platform, prompt, size, style });
+    generateImage.mutate({ platform, prompt, size, style, contentId: contentId ?? undefined }); // Include contentId
   };
 
   return (
@@ -93,6 +94,17 @@ const GenerateImageForm = () => {
                 onChange={(e) => setStyle(e.target.value)} 
                 className="w-full p-2 border rounded"
                 placeholder="e.g., Minimalist, Colorful, Corporate, etc."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Content ID (Optional)</label>
+              <input 
+                type="number"
+                value={contentId ?? ""}
+                onChange={(e) => setContentId(e.target.value ? parseInt(e.target.value) : null)}
+                className="w-full p-2 border rounded"
+                placeholder="Enter content ID if applicable"
               />
             </div>
           </form>
