@@ -239,3 +239,32 @@ export const youtubeVideos = createTable(
     index("youtube_video_youtube_id_idx").on(t.youtubeId),
   ],
 );
+
+export const scheduledYoutubeVideos = createTable(
+  "scheduled_youtube_video",
+  (d) => ({
+    id: d.serial().primaryKey(),
+    userId: d.varchar({ length: 256 }).notNull(),
+    title: d.varchar({ length: 256 }).notNull(),
+    description: d.text(),
+    tags: d.json(),
+    privacyStatus: d.varchar({ length: 20 }).default("private").notNull(),
+    thumbnailUrl: d.text(),
+    videoUrl: d.text().notNull(), // URL to the video file to upload
+    scheduleId: d.varchar({ length: 256 }), // QStash schedule ID
+    scheduledFor: d.timestamp({ withTimezone: true }).notNull(),
+    status: d.varchar({ length: 20 }).default("scheduled").notNull(), // scheduled, processing, completed, failed
+    youtubeId: d.varchar({ length: 50 }), // Will be filled after successful upload
+    uploadResult: d.json(), // Store the result of the upload operation
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+  }),
+  (t) => [
+    index("scheduled_youtube_video_user_id_idx").on(t.userId),
+    index("scheduled_youtube_video_status_idx").on(t.status),
+    index("scheduled_youtube_video_scheduled_for_idx").on(t.scheduledFor),
+  ],
+);
