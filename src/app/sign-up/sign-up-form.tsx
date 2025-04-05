@@ -2,10 +2,11 @@
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { authClient as client } from "@/lib/auth-client";
+import { CarouselPlugin } from "../login/carouselcomp"
+import { authClient as client } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
@@ -38,34 +39,42 @@ export default function SignUpForm({
         }
 
         try {
+            setLoading(true);
             await client.signUp.email(
                 {
                     email: formData.email,
                     password: formData.password,
                     name: formData.username,
-                    callbackURL: "/dashboard",
-                    fetchOptions: {
-                        onSuccess: () => router.push("/dashboard"),
-                        onError:()=>router.push("/sign-up"),
-                    }
                 },
+                {
+                    onRequest: () => setLoading(true),
+                    onResponse: () => {
+                        setLoading(false);
+                        router.push("/onboarding");
+                    },
+                    onError: () => {
+                        setLoading(false);
+                        setError("An error occurred during sign-up. Please try again.");
+                    },
+                }
             );
         } catch (err) {
             console.error("Error during sign-up:", err);
             setError("An error occurred during sign-up. Please try again.");
+            setLoading(false);
         }
     };
 
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
             <Card className="overflow-hidden">
-                <CardContent className="grid p-0 md:grid-cols-2">
+                <div className="grid md:grid-cols-2">
                     <form className="p-6 md:p-8" onSubmit={handleSubmit}>
                         <div className="flex flex-col gap-6">
                             <div className="flex flex-col items-center text-center">
                                 <h1 className="text-2xl font-bold">Create an account</h1>
                                 <p className="text-balance text-muted-foreground">
-                                    Sign up for your Acme Inc account
+                                    Sign up for your account
                                 </p>
                             </div>
                             {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -127,14 +136,16 @@ export default function SignUpForm({
                         </div>
                     </form>
                     <div className="relative hidden bg-muted md:block">
-                        {/* Add any additional content or components here if needed */}
+                        <div className="h-full w-full">
+                            <CarouselPlugin />
+                        </div>
                     </div>
-                </CardContent>
+                </div>
             </Card>
             <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
                 By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
                 and <a href="#">Privacy Policy</a>.
             </div>
         </div>
-    )
+    );
 }
