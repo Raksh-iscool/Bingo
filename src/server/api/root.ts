@@ -5,6 +5,7 @@ import { generateSocialImage } from "@/server/api/routers/create-image-post-api"
 import { twitterRouter } from "@/server/api/routers/twitter";
 import { youtubeRouter } from "@/server/api/routers/youtube-api";
 import { youtubeScheduleRouter } from "@/server/api/routers/youtube-schedule";
+import { twitterScheduleRouter } from "@/server/api/routers/twitter-schedule";
 
 /**
  * This is the primary router for your server.
@@ -17,7 +18,8 @@ export const appRouter = createTRPCRouter({
     generateImagePost: generateSocialImage,
     youtube : youtubeRouter,
     twitter: twitterRouter,
-    youtubeSchedule: youtubeScheduleRouter
+    youtubeSchedule: youtubeScheduleRouter,
+    twitterSchedule: twitterScheduleRouter,
 });
 
 // export type definition of API

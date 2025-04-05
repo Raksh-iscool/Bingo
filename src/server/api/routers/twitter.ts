@@ -1,5 +1,3 @@
-// src/server/api/routers/twitter.ts
-
 import {cookies} from "next/headers";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { eq } from "drizzle-orm";
@@ -70,7 +68,8 @@ export const twitterRouter = createTRPCRouter({
         );
       }
     }),
-    getUser: publicProcedure
+    
+    getUser: protectedProcedure
     .query(async () => {
       try {
         const cookieStore = await cookies();
@@ -109,7 +108,8 @@ export const twitterRouter = createTRPCRouter({
         );
       }
     }),
-    getFollowers: publicProcedure
+    
+    getFollowers: protectedProcedure
       .query(async () => {
         try {
           const cookieStore = await cookies();
@@ -161,7 +161,8 @@ export const twitterRouter = createTRPCRouter({
           );
         }
       }),
-      getInsights: publicProcedure
+      
+    getInsights: protectedProcedure
       .query(async () => {
         try {
           const cookieStore = await cookies();
@@ -203,39 +204,40 @@ export const twitterRouter = createTRPCRouter({
           );
         }
       }),
-      checkToken: protectedProcedure
-        .query(async ({ ctx, input }) => {
-          try {
-            const userId = ctx.session?.user.id;
+      
+    checkToken: protectedProcedure
+      .query(async ({ ctx }) => {
+        try {
+          const userId = ctx.session?.user.id;
 
-            // Get token from database using userId
-            const token = await db.query.twitterTokens.findFirst({
-              where: eq(twitterTokens.userId, userId)
-            });
+          // Get token from database using userId
+          const token = await db.query.twitterTokens.findFirst({
+            where: eq(twitterTokens.userId, userId)
+          });
 
-            if (!token) {
-              return { isValid: false, message: "No token found in database" };
-            }
-
-            // Check if token is expired
-            const now = new Date();
-            const isExpired = token.expiryDate < now;
-
-            return {
-              isValid: !isExpired,
-              message: isExpired ? "Token has expired" : "Token is valid",
-              expiresAt: token.expiryDate,
-              accessToken: token.accessToken
-            };
-
-          } catch (error) {
-            console.error("Token check failed:", error);
-            return {
-              isValid: false,
-              message: "Failed to verify token",
-              error: error instanceof Error ? error.message : "Unknown error"
-            };
+          if (!token) {
+            return { isValid: false, message: "No token found in database" };
           }
-        }),
+
+          // Check if token is expired
+          const now = new Date();
+          const isExpired = token.expiryDate < now;
+
+          return {
+            isValid: !isExpired,
+            message: isExpired ? "Token has expired" : "Token is valid",
+            expiresAt: token.expiryDate,
+            accessToken: token.accessToken
+          };
+
+        } catch (error) {
+          console.error("Token check failed:", error);
+          return {
+            isValid: false,
+            message: "Failed to verify token",
+            error: error instanceof Error ? error.message : "Unknown error"
+          };
+        }
+      }),
   
 });
