@@ -28,7 +28,7 @@ export function LoginForm({
                             <div className="flex flex-col items-center text-center">
                                 <h1 className="text-2xl font-bold">Welcome back</h1>
                                 <p className="text-balance text-muted-foreground">
-                                    Login to your Acme Inc account
+                                    Login to your account
                                 </p>
                             </div>
                             <div className="grid gap-2">
@@ -59,7 +59,7 @@ export function LoginForm({
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                 />
-                            </div> 
+                            </div>
                             <Button
                                 type="submit"
                                 className="w-full"
@@ -78,7 +78,7 @@ export function LoginForm({
                                                 setLoading(false);
                                                 router.push("/dashboard");
                                             },
-                                            onError:()=>{
+                                            onError: () => {
                                                 router.push("/login");
                                             }
                                         },
