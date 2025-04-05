@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import {
@@ -41,9 +38,9 @@ export const youtubeRouter = createTRPCRouter({
   
   // Get auth URL for YouTube integration
   getAuthUrl: protectedProcedure
-    .query(({ ctx }) => {
-      const userId = ctx.session.user.id;
-      return { url: getAuthUrl(userId) };
+    .query(() => {
+      // const userId = ctx.session.user.id;
+      return { url: getAuthUrl() };
     }),
   
     checkAuthentication: protectedProcedure

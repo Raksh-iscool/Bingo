@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         tags?: string[];
         privacyStatus?: 'private' | 'public' | 'unlisted';
       };
-    } catch (e) {
+    } catch {
       return NextResponse.json({ error: 'Invalid metadata format' }, { status: 400 });
     }
     

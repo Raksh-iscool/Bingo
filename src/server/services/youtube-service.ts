@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { google } from 'googleapis';
 import { desc, eq } from 'drizzle-orm';
@@ -15,13 +13,6 @@ import type { OAuth2Client, Credentials } from 'google-auth-library';
 const CLIENT_ID = env.YOUTUBE_CLIENT_ID;
 const CLIENT_SECRET = env.YOUTUBE_CLIENT_SECRET;
 const REDIRECT_URI = env.YOUTUBE_REDIRECT_URI ?? 'http://localhost:3000/api/youtube/oauthcallback';
-
-// Define interface for token storage
-interface YouTubeToken {
-  access_token: string;
-  refresh_token?: string;
-  expiry_date: number;
-}
 
 // Scopes needed for YouTube operations
 const SCOPES = [
@@ -70,7 +61,7 @@ export async function checkAuthentication(userId: string): Promise<{ isAuthentic
 }
 
 // Get authorization URL for the given user
-export function getAuthUrl(userId: string, state?: string): string {
+export function getAuthUrl(): string {
   const oauth2Client = getOAuth2Client();
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -190,6 +181,8 @@ export async function uploadVideo({
 
   try {
     console.log('Uploading video...');
+    console.log(thumbnailBuffer);
+    
     
     // Create readable stream from buffer
     const readable = new Readable();
