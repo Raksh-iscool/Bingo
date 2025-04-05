@@ -53,7 +53,7 @@ export const updateSocialPost = protectedProcedure
 
       Update Instructions:
       ${input.updatePrompt}
-
+ 
       Rules:
       1. Maintain the original post's core message while incorporating the updates
       2. Keep the platform's tone and style

@@ -46,6 +46,7 @@ export default function SignUpForm({
                     callbackURL: "/dashboard",
                     fetchOptions: {
                         onSuccess: () => router.push("/dashboard"),
+                        onError:()=>router.push("/sign-up"),
                     }
                 },
             );

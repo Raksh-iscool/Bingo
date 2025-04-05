@@ -13,6 +13,7 @@ import {
   NavigationMenuTrigger 
 } from "@/components/ui/navigation-menumod";
 import { Button } from "@/components/ui/button";
+import YouTubeComponent from '@/components/ui/YoutubeForm';
 
 enum ActiveTab {
   CREATE_POST = 'create_post',
@@ -64,7 +65,7 @@ export default function ChatPage() {
         {activeTab === ActiveTab.CREATE_POST && <CreatePostForm />}
         {activeTab === ActiveTab.UPDATE_POST && <UpdatePostForm />}
         {activeTab === ActiveTab.GENERATE_IMAGE && <GenerateImageForm />}
-        {/* {activeTab === ActiveTab.YOUTUBE && <YouTubeForm />} */}
+        {activeTab === ActiveTab.YOUTUBE && <YouTubeComponent/>}
       </div>
     </div>
   );

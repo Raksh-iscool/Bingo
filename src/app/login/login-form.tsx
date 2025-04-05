@@ -78,6 +78,9 @@ export function LoginForm({
                                                 setLoading(false);
                                                 router.push("/dashboard");
                                             },
+                                            onError:()=>{
+                                                router.push("/login");
+                                            }
                                         },
                                     );
                                 }}

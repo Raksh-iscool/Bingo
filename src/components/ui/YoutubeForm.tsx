@@ -1,551 +1,733 @@
-// "use client";
-// import { api } from '@/trpc/react';
-// import React, { useState } from 'react';
+"use client"
+import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 
-// const YouTubeForm = () => {
-//   // Authentication states
-//   const [authUrl, setAuthUrl] = useState("");
-//   const [authCode, setAuthCode] = useState("");
-//   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
-//   // Video management states
-//   const [userVideos, setUserVideos] = useState([]);
-//   const [selectedVideo, setSelectedVideo] = useState(null);
-//   const [videoStats, setVideoStats] = useState(null);
-  
-//   // Video upload states
-//   const [videoFile, setVideoFile] = useState(null);
-//   const [thumbnailFile, setThumbnailFile] = useState(null);
-//   const [videoTitle, setVideoTitle] = useState("");
-//   const [videoDescription, setVideoDescription] = useState("");
-//   const [videoTags, setVideoTags] = useState("");
-//   const [privacyStatus, setPrivacyStatus] = useState("private");
-  
-//   // Video update states
-//   const [updatedTitle, setUpdatedTitle] = useState("");
-//   const [updatedDescription, setUpdatedDescription] = useState("");
-//   const [updatedTags, setUpdatedTags] = useState("");
-//   const [updatedPrivacyStatus, setUpdatedPrivacyStatus] = useState("");
-  
-//   // UI states
-//   const [activeTab, setActiveTab] = useState("auth");
-//   const [isLoading, setIsLoading] = useState(false);
-//   const [error, setError] = useState("");
-//   const [success, setSuccess] = useState("");
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Loader2, Upload, Edit2, FileVideo, Youtube, BarChart2 } from 'lucide-react';
+import { api } from '@/trpc/react';
 
-//   // tRPC Queries and Mutations
-//   const getAuthUrlQuery = api.generateYoutube.getAuthUrl.useQuery(undefined, {
-//     onSuccess: (data) => {
-//       setAuthUrl(data.url);
-//     },
-//     onError: (error) => {
-//       setError(error.message);
-//     },
-//     enabled: false
-//   });
+const YouTubeComponent = () => {
+  // Local state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedThumbnail, setSelectedThumbnail] = useState<File | null>(null);
+  const [videoTitle, setVideoTitle] = useState('');
+  const [videoDescription, setVideoDescription] = useState('');
+  const [videoTags, setVideoTags] = useState('');
+  const [privacyStatus, setPrivacyStatus] = useState<'private' | 'public' | 'unlisted'>('private');
+  const [selectedVideoId, setSelectedVideoId] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
-//   const saveAuthToken = api.generateYoutube.saveAuthToken.useMutation({
-//     onSuccess: () => {
-//       setIsAuthenticated(true);
-//       setIsLoading(false);
-//       setError("");
-//       setSuccess("Successfully authenticated with YouTube!");
-//       // Fetch videos after successful authentication
-//       getUserVideosQuery.refetch();
-//     },
-//     onError: (error) => {
-//       setError(error.message);
-//       setIsLoading(false);
-//     }
-//   });
+  // TRPC queries and mutations
+  const authStatus = api.youtube.checkAuthentication.useQuery();
+  const authUrlQuery = api.youtube.getAuthUrl.useQuery();
+  const saveAuthToken = api.youtube.saveAuthToken.useMutation();
+  const userVideos = api.youtube.getUserVideos.useQuery(undefined, {
+    enabled: authStatus.data?.isAuthenticated === true,
+  });
+  const videoStatistics = api.youtube.getVideoStatistics.useQuery(
+    { videoId: selectedVideoId },
+    { enabled: !!selectedVideoId && authStatus.data?.isAuthenticated === true }
+  );
+  // Remove unused mutation declaration
+  const updateVideoMutation = api.youtube.updateVideo.useMutation();
+  const channelStats = api.youtube.getChannelStatistics.useQuery(undefined, {
+    enabled: authStatus.data?.isAuthenticated === true,
+  });
+  const allVideosWithStats = api.youtube.getAllVideosWithStatistics.useQuery(undefined, {
+    enabled: authStatus.data?.isAuthenticated === true,
+  });
 
-//   const getUserVideosQuery = api.generateYoutube.getUserVideos.useQuery(undefined, {
-//     onSuccess: (data) => {
-//       setUserVideos(data);
-//     },
-//     onError: (error) => {
-//       setError(error.message);
-//     },
-//     enabled: false
-//   });
+  // Handle OAuth callback
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get('code');
+    
+    if (code && authStatus.data?.isAuthenticated === false) {
+      // Fix floating promise
+      void saveAuthToken.mutateAsync({ code })
+        .then(() => {
+          // Remove code from URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+          // Refetch auth status
+          void authStatus.refetch();
+        })
+        .catch(error => {
+          console.error("Error saving auth token:", error);
+        });
+    }
+  // Fix dependency array
+  }, [authStatus.data?.isAuthenticated, saveAuthToken, authStatus]);
 
-//   const getVideoQuery = api.generateYoutube.getVideo.useMutation({
-//     onSuccess: (data) => {
-//       setSelectedVideo(data);
-//       // Pre-fill update form with current values
-//       setUpdatedTitle(data.title || "");
-//       setUpdatedDescription(data.description || "");
-//       setUpdatedTags(data.tags?.join(", ") || "");
-//       setUpdatedPrivacyStatus(data.privacyStatus || "private");
-//     },
-//     onError: (error) => {
-//       setError(error.message);
-//     }
-//   });
+  // Handle file selection
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Fix optional chain
+    if (event.target?.files?.[0]) {
+      setSelectedFile(event.target.files[0]);
+    }
+  };
 
-//   const getVideoStatsQuery = api.generateYoutube.getVideoStatistics.useMutation({
-//     onSuccess: (data) => {
-//       setVideoStats(data);
-//     },
-//     onError: (error) => {
-//       setError(error.message);
-//     }
-//   });
+  // Handle thumbnail selection
+  const handleThumbnailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Fix optional chain
+    if (event.target?.files?.[0]) {
+      setSelectedThumbnail(event.target.files[0]);
+    }
+  };
 
-//   const uploadVideoMutation = api.generateYoutube.uploadVideo.useMutation({
-//     onSuccess: (data) => {
-//       setSuccess(`Video uploaded successfully! Video ID: ${data.videoId}`);
-//       setIsLoading(false);
-//       resetUploadForm();
-//       getUserVideosQuery.refetch();
-//     },
-//     onError: (error) => {
-//       setError(error.message);
-//       setIsLoading(false);
-//     }
-//   });
+  // Handle video upload
+  const handleUpload = async () => {
+    if (!selectedFile || !videoTitle) return;
 
-//   const updateVideoMutation = api.generateYoutube.updateVideo.useMutation({
-//     onSuccess: (data) => {
-//       setSuccess(`Video updated successfully!`);
-//       setIsLoading(false);
-//       getUserVideosQuery.refetch();
-//     },
-//     onError: (error) => {
-//       setError(error.message);
-//       setIsLoading(false);
-//     }
-//   });
+    setIsUploading(true);
+    try {
+      // Extract tags array from the comma-separated string
+      const tagsArray = videoTags.split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0);
 
-//   // Helper functions
-//   const resetUploadForm = () => {
-//     setVideoFile(null);
-//     setThumbnailFile(null);
-//     setVideoTitle("");
-//     setVideoDescription("");
-//     setVideoTags("");
-//     setPrivacyStatus("private");
-//   };
+      // Create FormData
+      const formData = new FormData();
+      formData.append('video', selectedFile);
+      if (selectedThumbnail) {
+        formData.append('thumbnail', selectedThumbnail);
+      }
 
-//   const handleGetAuthUrl = () => {
-//     setError("");
-//     getAuthUrlQuery.refetch();
-//   };
+      // Create a payload with text data
+      const payload = {
+        title: videoTitle,
+        description: videoDescription,
+        tags: tagsArray,
+        privacyStatus,
+      };
 
-//   const handleSaveToken = (e) => {
-//     e.preventDefault();
-//     setIsLoading(true);
-//     setError("");
-//     saveAuthToken.mutate({ code: authCode });
-//   };
+      // Convert metadata to JSON string and append to formData
+      formData.append('metadata', JSON.stringify(payload));
 
-//   const handleVideoSelection = (videoId) => {
-//     setError("");
-//     setSuccess("");
-//     setSelectedVideo(null);
-//     setVideoStats(null);
-//     getVideoQuery.mutate({ videoId });
-//     getVideoStatsQuery.mutate({ videoId });
-//   };
+      // Send the form data to your API endpoint
+      const response = await fetch('/api/youtube/upload', {
+        method: 'POST',
+        body: formData,
+      });
 
-//   const handleVideoUpload = async (e) => {
-//     e.preventDefault();
-//     setIsLoading(true);
-//     setError("");
-//     setSuccess("");
+      if (!response.ok) {
+        // Fix unsafe assignment and member access
+        const errorData = await response.json() as { message?: string };
+        throw new Error(errorData.message ?? 'Failed to upload video');
+      }
 
-//     try {
-//       // Convert files to buffers
-//       const videoBuffer = await fileToBuffer(videoFile);
-//       let thumbnailBuffer = null;
-//       if (thumbnailFile) {
-//         thumbnailBuffer = await fileToBuffer(thumbnailFile);
-//       }
+      // Reset form
+      setSelectedFile(null);
+      setSelectedThumbnail(null);
+      setVideoTitle('');
+      setVideoDescription('');
+      setVideoTags('');
+      setPrivacyStatus('private');
 
-//       // Parse tags
-//       const tagArray = videoTags.split(",").map(tag => tag.trim()).filter(tag => tag);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = '';
 
-//       // Upload the video
-//       uploadVideoMutation.mutate({
-//         videoBuffer,
-//         title: videoTitle,
-//         description: videoDescription,
-//         tags: tagArray,
-//         privacyStatus: privacyStatus,
-//         thumbnailBuffer
-//       });
-//     } catch (err) {
-//       setError("Error processing files: " + err.message);
-//       setIsLoading(false);
-//     }
-//   };
+      // Fix floating promises
+      void userVideos.refetch();
+      void allVideosWithStats.refetch();
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
-//   const handleVideoUpdate = (e) => {
-//     e.preventDefault();
-//     if (!selectedVideo?.id) {
-//       setError("No video selected for update");
-//       return;
-//     }
-
-//     setIsLoading(true);
-//     setError("");
-//     setSuccess("");
-
-//     // Parse tags
-//     const tagArray = updatedTags.split(",").map(tag => tag.trim()).filter(tag => tag);
-
-//     updateVideoMutation.mutate({
-//       videoId: selectedVideo.id,
-//       title: updatedTitle,
-//       description: updatedDescription,
-//       tags: tagArray,
-//       privacyStatus: updatedPrivacyStatus
-//     });
-//   };
-
-//   const fileToBuffer = (file) => {
-//     return new Promise((resolve, reject) => {
-//       const reader = new FileReader();
-//       reader.onload = () => {
-//         const arrayBuffer = reader.result;
-//         const buffer = Buffer.from(arrayBuffer);
-//         resolve(buffer);
-//       };
-//       reader.onerror = (error) => reject(error);
-//       reader.readAsArrayBuffer(file);
-//     });
-//   };
-
-//   const refreshVideos = () => {
-//     setError("");
-//     getUserVideosQuery.refetch();
-//   };
-
-//   return (
-//     <div className="p-6 bg-white rounded-lg shadow-md">
-//       <h2 className="text-2xl font-bold mb-6">YouTube Integration</h2>
+  // Handle video update
+  const handleUpdate = async () => {
+    if (!selectedVideoId || !videoTitle) return;
+    
+    setIsUpdating(true);
+    
+    try {
+      // Prepare tags array
+      const tags = videoTags ? videoTags.split(',').map(tag => tag.trim()) : [];
       
-//       {/* Tab Navigation */}
-//       <div className="flex mb-6 border-b">
-//         <button 
-//           className={`px-4 py-2 ${activeTab === 'auth' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600'}`}
-//           onClick={() => setActiveTab('auth')}
-//         >
-//           Authentication
-//         </button>
-//         <button 
-//           className={`px-4 py-2 ${activeTab === 'videos' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600'}`}
-//           onClick={() => {
-//             setActiveTab('videos');
-//             if (isAuthenticated) {
-//               refreshVideos();
-//             }
-//           }}
-//           disabled={!isAuthenticated}
-//         >
-//           My Videos
-//         </button>
-//         <button 
-//           className={`px-4 py-2 ${activeTab === 'upload' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600'}`}
-//           onClick={() => setActiveTab('upload')}
-//           disabled={!isAuthenticated}
-//         >
-//           Upload Video
-//         </button>
-//       </div>
+      // Update video
+      await updateVideoMutation.mutateAsync({
+        videoId: selectedVideoId,
+        title: videoTitle,
+        description: videoDescription,
+        tags,
+        privacyStatus,
+      });
       
-//       {/* Status Messages */}
-//       {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
-//       {success && <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">{success}</div>}
+      // Reset form
+      setVideoTitle('');
+      setVideoDescription('');
+      setVideoTags('');
+      setPrivacyStatus('private');
+      setSelectedVideoId('');
       
-//       {/* Authentication Tab */}
-//       {activeTab === 'auth' && (
-//         <div className="space-y-6">
-//           {!isAuthenticated ? (
-//             <div className="space-y-4">
-//               <div>
-//                 <button 
-//                   onClick={handleGetAuthUrl} 
-//                   className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-//                   disabled={getAuthUrlQuery.isFetching}
-//                 >
-//                   {getAuthUrlQuery.isFetching ? "Generating..." : "Get Authorization URL"}
-//                 </button>
-//               </div>
-              
-//               {authUrl && (
-//                 <div>
-//                   <p className="mb-2">Please authenticate with YouTube:</p>
-//                   <a 
-//                     href={authUrl} 
-//                     target="_blank" 
-//                     rel="noopener noreferrer"
-//                     className="text-blue-600 hover:underline"
-//                   >
-//                     Click here to authorize
-//                   </a>
-                  
-//                   <form onSubmit={handleSaveToken} className="mt-4 space-y-4">
-//                     <div>
-//                       <label className="block text-sm font-medium mb-1">Authorization Code</label>
-//                       <input 
-//                         type="text"
-//                         value={authCode} 
-//                         onChange={(e) => setAuthCode(e.target.value)} 
-//                         className="w-full p-2 border rounded"
-//                         placeholder="Paste the code from YouTube here"
-//                         required
-//                       />
-//                     </div>
-                    
-//                     <button 
-//                       type="submit" 
-//                       className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-//                       disabled={isLoading}
-//                     >
-//                       {isLoading ? "Saving..." : "Save Authorization"}
-//                     </button>
-//                   </form>
-//                 </div>
-//               )}
-//             </div>
-//           ) : (
-//             <div className="p-3 bg-green-100 text-green-700 rounded">
-//               You are successfully authenticated with YouTube!
-//               <button 
-//                 className="ml-4 px-3 py-1 bg-white border border-green-600 text-green-600 rounded hover:bg-green-50"
-//                 onClick={() => setIsAuthenticated(false)}
-//               >
-//                 Disconnect
-//               </button>
-//             </div>
-//           )}
-//         </div>
-//       )}
+      // Fix floating promises
+      void userVideos.refetch();
+      void allVideosWithStats.refetch();
+    } catch (error) {
+      console.error('Update failed:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Fill form with selected video data
+  const selectVideoForEdit = (videoId: string) => {
+    if (!userVideos.data) return;
+    
+    const video = userVideos.data.find(v => String(v.youtubeId) === videoId);
+    if (video) {
+      setSelectedVideoId(videoId);
+      setVideoTitle(video.title);
+      // Fix nullish coalescing
+      setVideoDescription(video.description ?? '');
+      // Fix toString issue
+      setVideoTags(
+        Array.isArray(video.tags)
+          ? video.tags.join(',')
+          : typeof video.tags === 'string'
+          ? video.tags
+          : ''
+      );
+      setPrivacyStatus(video.privacyStatus as 'private' | 'public' | 'unlisted');
+    }
+  };
+
+  // Format numbers for readability
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat().format(num);
+  };
+
+  // Render authentication section
+  const renderAuthSection = () => {
+    if (authStatus.isLoading) {
+      return <div className="flex justify-center p-4"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    }
+
+    if (authStatus.data?.isAuthenticated) {
+      return (
+        <div className="bg-green-100 dark:bg-green-900 p-4 rounded-md mb-6">
+          <p className="flex items-center text-green-700 dark:text-green-300">
+            <Youtube className="mr-2" /> Connected to YouTube
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-yellow-100 dark:bg-yellow-900 p-4 rounded-md mb-6">
+        <p className="mb-4 text-yellow-800 dark:text-yellow-200">You need to connect to YouTube to use this feature.</p>
+        {authUrlQuery.data && (
+          <Button asChild>
+            <a href={authUrlQuery.data.url} className="flex items-center">
+              <Youtube className="mr-2" /> Connect to YouTube
+            </a>
+          </Button>
+        )}
+      </div>
+    );
+  };
+
+  // Render YouTube component
+  return (
+    <div className="w-full max-w-6xl mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6 flex items-center">
+        <Youtube className="mr-2" /> YouTube Manager
+      </h1>
       
-//       {/* Videos Tab */}
-//       {activeTab === 'videos' && isAuthenticated && (
-//         <div className="space-y-6">
-//           <div className="flex justify-between items-center">
-//             <h3 className="text-lg font-medium">My YouTube Videos</h3>
-//             <button 
-//               onClick={refreshVideos}
-//               className="px-3 py-1 bg-gray-100 border rounded hover:bg-gray-200"
-//               disabled={getUserVideosQuery.isFetching}
-//             >
-//               {getUserVideosQuery.isFetching ? "Refreshing..." : "Refresh"}
-//             </button>
-//           </div>
+      {renderAuthSection()}
+      
+      {authStatus.data?.isAuthenticated && (
+        <Tabs defaultValue="videos">
+          <TabsList className="mb-6">
+            <TabsTrigger value="videos">
+              <FileVideo className="mr-2" /> Videos
+            </TabsTrigger>
+            <TabsTrigger value="upload">
+              <Upload className="mr-2" /> Upload
+            </TabsTrigger>
+            <TabsTrigger value="edit">
+              <Edit2 className="mr-2" /> Edit
+            </TabsTrigger>
+            <TabsTrigger value="analytics">
+              <BarChart2 className="mr-2" /> Analytics
+            </TabsTrigger>
+          </TabsList>
           
-//           {getUserVideosQuery.isFetching ? (
-//             <div className="text-center py-4">Loading videos...</div>
-//           ) : userVideos.length > 0 ? (
-//             <div className="grid md:grid-cols-2 gap-4">
-//               {userVideos.map((video) => (
-//                 <div 
-//                   key={video.id} 
-//                   className={`p-4 border rounded cursor-pointer hover:bg-gray-50 ${selectedVideo?.id === video.id ? 'border-blue-500 bg-blue-50' : ''}`}
-//                   onClick={() => handleVideoSelection(video.id)}
-//                 >
-//                   <h4 className="font-medium">{video.title}</h4>
-//                   <p className="text-sm text-gray-600 truncate">{video.description}</p>
-//                   <div className="mt-2 text-xs text-gray-500">
-//                     {video.privacyStatus} • {new Date(video.publishedAt).toLocaleDateString()}
-//                   </div>
-//                 </div>
-//               ))}
-//             </div>
-//           ) : (
-//             <div className="text-center py-6 text-gray-500">No videos found</div>
-//           )}
+          {/* Videos Tab */}
+          <TabsContent value="videos">
+            <Card>
+              <CardHeader>
+                <CardTitle>Your YouTube Videos</CardTitle>
+                <CardDescription>Manage your YouTube content</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {userVideos.isLoading ? (
+                  <div className="flex justify-center p-4"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                ) : userVideos.data && userVideos.data.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Thumbnail</TableHead>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {userVideos.data.map((video) => (
+                        <TableRow key={video.id}>
+                          <TableCell>
+                            {video.thumbnailUrl ? (
+                              // Fix <img> warning with next/image
+                              <Image 
+                                src={video.thumbnailUrl} 
+                                alt={video.title}
+                                width={80}
+                                height={45}
+                                className="rounded"
+                              />
+                            ) : (
+                              <div className="w-20 h-12 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+                                <FileVideo size={16} />
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">{video.title}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {new Date(video.createdAt).toLocaleDateString()}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className={
+                              video.privacyStatus === 'public' 
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : video.privacyStatus === 'unlisted'
+                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                            + ' px-2 py-1 rounded-full text-xs'}>
+                              {video.privacyStatus}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="outline" size="sm" onClick={() => selectVideoForEdit(String(video.id))}>
+                                Edit
+                              </Button>
+                              <Button variant="outline" size="sm" asChild>
+                                <a href={`https://youtu.be/${video.id}`} target="_blank" rel="noopener noreferrer">
+                                  View
+                                </a>
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    No videos found. Upload your first video!
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
           
-//           {/* Selected Video Details */}
-//           {selectedVideo && (
-//             <div className="mt-8 border-t pt-6">
-//               <h3 className="text-lg font-medium mb-4">Video Details</h3>
+          {/* Upload Tab */}
+          <TabsContent value="upload">
+            <Card>
+              <CardHeader>
+                <CardTitle>Upload New Video</CardTitle>
+                <CardDescription>Share your content on YouTube</CardDescription>
+              </CardHeader>
+                <CardContent>
+                <div className="space-y-4">
+                  <div>
+                  <label className="block text-sm font-medium mb-1">Video File</label>
+                  <Input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="video/*,.mov"
+                    onChange={handleFileChange}
+                    className="cursor-pointer"
+                  />
+                  {selectedFile && (
+                    <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">
+                    Selected: {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
+                    </p>
+                  )}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Custom Thumbnail (Optional)</label>
+                    <Input
+                      ref={thumbnailInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleThumbnailChange}
+                      className="cursor-pointer"
+                    />
+                    {selectedThumbnail && (
+                      <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">
+                        Selected: {selectedThumbnail.name}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Title</label>
+                    <Input
+                      value={videoTitle}
+                      onChange={(e) => setVideoTitle(e.target.value)}
+                      placeholder="Enter video title"
+                      maxLength={100}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Description</label>
+                    <Textarea
+                      value={videoDescription}
+                      onChange={(e) => setVideoDescription(e.target.value)}
+                      placeholder="Enter video description"
+                      rows={4}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Tags (comma separated)</label>
+                    <Input
+                      value={videoTags}
+                      onChange={(e) => setVideoTags(e.target.value)}
+                      placeholder="tag1, tag2, tag3"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Privacy Status</label>
+                    <Select value={privacyStatus} onValueChange={(value: 'private' | 'public' | 'unlisted') => setPrivacyStatus(value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select privacy status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="private">Private</SelectItem>
+                        <SelectItem value="unlisted">Unlisted</SelectItem>
+                        <SelectItem value="public">Public</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  onClick={handleUpload} 
+                  disabled={!selectedFile || !videoTitle || isUploading}
+                  className="w-full"
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Video
+                    </>
+                  )}
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+          
+          {/* Edit Tab */}
+          <TabsContent value="edit">
+            <Card>
+              <CardHeader>
+                <CardTitle>Edit Video</CardTitle>
+                <CardDescription>Update your YouTube video details</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Select Video</label>
+                    <Select value={selectedVideoId} onValueChange={selectVideoForEdit}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a video to edit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {userVideos.data?.map((video) => (
+                          <SelectItem key={video.id} value={String(video.id)}>
+                            {video.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {selectedVideoId && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Title</label>
+                        <Input
+                          value={videoTitle}
+                          onChange={(e) => setVideoTitle(e.target.value)}
+                          placeholder="Enter video title"
+                          maxLength={100}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Description</label>
+                        <Textarea
+                          value={videoDescription}
+                          onChange={(e) => setVideoDescription(e.target.value)}
+                          placeholder="Enter video description"
+                          rows={4}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Tags (comma separated)</label>
+                        <Input
+                          value={videoTags}
+                          onChange={(e) => setVideoTags(e.target.value)}
+                          placeholder="tag1, tag2, tag3"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Privacy Status</label>
+                        <Select value={privacyStatus} onValueChange={(value: 'private' | 'public' | 'unlisted') => setPrivacyStatus(value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select privacy status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="private">Private</SelectItem>
+                            <SelectItem value="unlisted">Unlisted</SelectItem>
+                            <SelectItem value="public">Public</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  onClick={handleUpdate} 
+                  disabled={!selectedVideoId || !videoTitle || isUpdating}
+                  className="w-full"
+                >
+                  {isUpdating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Edit2 className="mr-2 h-4 w-4" />
+                      Update Video
+                    </>
+                  )}
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+          
+          {/* Analytics Tab */}
+          <TabsContent value="analytics">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Channel Statistics */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Channel Analytics</CardTitle>
+                  <CardDescription>Overall channel performance</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {channelStats.isLoading ? (
+                    <div className="flex justify-center p-4"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                  ) : channelStats.data ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Subscribers</p>
+                        <p className="text-2xl font-bold">{formatNumber(Number(channelStats.data.channel?.statistics?.subscriberCount ?? 0))}</p>
+                      </div>
+                      <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Views</p>
+                        <p className="text-2xl font-bold">{formatNumber(Number(channelStats.data.channel?.statistics?.viewCount ?? 0))}</p>
+                      </div>
+                      <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Videos</p>
+                        <p className="text-2xl font-bold">{formatNumber(Number(channelStats.data.channel?.statistics?.videoCount ?? 0))}</p>
+                      </div>
+                      <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Comments</p>
+                        <p className="text-2xl font-bold">{formatNumber(Number(channelStats.data.channel?.statistics?.commentCount ?? 0))}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-center py-4 text-gray-500 dark:text-gray-400">
+                      Unable to fetch channel statistics
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
               
-//               <div className="grid md:grid-cols-2 gap-6">
-//                 <div>
-//                   <h4 className="font-medium mb-2">Information</h4>
-//                   <div className="space-y-2">
-//                     <p><span className="font-medium">Title:</span> {selectedVideo.title}</p>
-//                     <p><span className="font-medium">Description:</span> {selectedVideo.description}</p>
-//                     <p><span className="font-medium">Status:</span> {selectedVideo.privacyStatus}</p>
-//                     <p><span className="font-medium">Published:</span> {new Date(selectedVideo.publishedAt).toLocaleString()}</p>
-//                     <p><span className="font-medium">Video ID:</span> {selectedVideo.id}</p>
-//                     {selectedVideo.tags && selectedVideo.tags.length > 0 && (
-//                       <div>
-//                         <span className="font-medium">Tags:</span> 
-//                         <div className="flex flex-wrap gap-1 mt-1">
-//                           {selectedVideo.tags.map((tag, index) => (
-//                             <span key={index} className="px-2 py-1 bg-gray-100 text-xs rounded">
-//                               {tag}
-//                             </span>
-//                           ))}
-//                         </div>
-//                       </div>
-//                     )}
-//                   </div>
-//                 </div>
-                
-//                 {videoStats && (
-//                   <div>
-//                     <h4 className="font-medium mb-2">Statistics</h4>
-//                     <div className="space-y-2">
-//                       <p><span className="font-medium">Views:</span> {videoStats.viewCount}</p>
-//                       <p><span className="font-medium">Likes:</span> {videoStats.likeCount}</p>
-//                       <p><span className="font-medium">Comments:</span> {videoStats.commentCount}</p>
-//                     </div>
-//                   </div>
-//                 )}
-//               </div>
+              {/* Video Statistics */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Video Analytics</CardTitle>
+                  <CardDescription>Select a video to view statistics</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4">
+                    <Select value={selectedVideoId} onValueChange={setSelectedVideoId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a video" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {userVideos.data?.map((video) => (
+                          <SelectItem key={video.id} value={String(video.id)}>
+                            {video.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {selectedVideoId && (
+                    videoStatistics.isLoading ? (
+                      <div className="flex justify-center p-4"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                    ) : videoStatistics.data ? (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Views</p>
+                          {/* Fix unsafe member access */}
+                          <p className="text-2xl font-bold">{formatNumber(Number(videoStatistics.data.statistics?.viewCount ?? 0))}</p>
+                        </div>
+                        <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Likes</p>
+                          {/* Fix unsafe member access */}
+                          <p className="text-2xl font-bold">{formatNumber(Number(videoStatistics.data.statistics?.likeCount ?? 0))}</p>
+                        </div>
+                        <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Comments</p>
+                          {/* Fix unsafe member access */}
+                          <p className="text-2xl font-bold">{formatNumber(Number(videoStatistics.data.statistics?.commentCount ?? 0))}</p>
+                        </div>
+                        <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Favorites</p>
+                          <p className="text-2xl font-bold">{formatNumber(Number(videoStatistics.data.statistics?.favoriteCount ?? 0))}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-center py-4 text-gray-500 dark:text-gray-400">
+                        Select a video to view statistics
+                      </p>
+                    )
+                  )}
+                </CardContent>
+              </Card>
               
-//               {/* Update Form */}
-//               <div className="mt-8 pt-6 border-t">
-//                 <h4 className="font-medium mb-4">Update Video</h4>
-//                 <form onSubmit={handleVideoUpdate} className="space-y-4">
-//                   <div>
-//                     <label className="block text-sm font-medium mb-1">Title</label>
-//                     <input
-//                       type="text"
-//                       value={updatedTitle}
-//                       onChange={(e) => setUpdatedTitle(e.target.value)}
-//                       className="w-full p-2 border rounded"
-//                       required
-//                     />
-//                   </div>
-                  
-//                   <div>
-//                     <label className="block text-sm font-medium mb-1">Description</label>
-//                     <textarea
-//                       value={updatedDescription}
-//                       onChange={(e) => setUpdatedDescription(e.target.value)}
-//                       className="w-full p-2 border rounded"
-//                       rows={4}
-//                     />
-//                   </div>
-                  
-//                   <div>
-//                     <label className="block text-sm font-medium mb-1">Tags (comma separated)</label>
-//                     <input
-//                       type="text"
-//                       value={updatedTags}
-//                       onChange={(e) => setUpdatedTags(e.target.value)}
-//                       className="w-full p-2 border rounded"
-//                       placeholder="tag1, tag2, tag3"
-//                     />
-//                   </div>
-                  
-//                   <div>
-//                     <label className="block text-sm font-medium mb-1">Privacy Status</label>
-//                     <select
-//                       value={updatedPrivacyStatus}
-//                       onChange={(e) => setUpdatedPrivacyStatus(e.target.value)}
-//                       className="w-full p-2 border rounded"
-//                     >
-//                       <option value="private">Private</option>
-//                       <option value="unlisted">Unlisted</option>
-//                       <option value="public">Public</option>
-//                     </select>
-//                   </div>
-                  
-//                   <button
-//                     type="submit"
-//                     className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-//                     disabled={isLoading || updateVideoMutation.isLoading}
-//                   >
-//                     {isLoading || updateVideoMutation.isLoading ? "Updating..." : "Update Video"}
-//                   </button>
-//                 </form>
-//               </div>
-//             </div>
-//           )}
-//         </div>
-//       )}
-      
-//       {/* Upload Tab */}
-//       {activeTab === 'upload' && isAuthenticated && (
-//         <div className="space-y-6">
-//           <h3 className="text-lg font-medium">Upload New Video</h3>
-//           <form onSubmit={handleVideoUpload} className="space-y-4">
-//             <div>
-//               <label className="block text-sm font-medium mb-1">Video File</label>
-//               <input
-//                 type="file"
-//                 accept="video/*"
-//                 onChange={(e) => setVideoFile(e.target.files[0])}
-//                 className="w-full p-2 border rounded"
-//                 required
-//               />
-//             </div>
-            
-//             <div>
-//               <label className="block text-sm font-medium mb-1">Title</label>
-//               <input
-//                 type="text"
-//                 value={videoTitle}
-//                 onChange={(e) => setVideoTitle(e.target.value)}
-//                 className="w-full p-2 border rounded"
-//                 required
-//               />
-//             </div>
-            
-//             <div>
-//               <label className="block text-sm font-medium mb-1">Description</label>
-//               <textarea
-//                 value={videoDescription}
-//                 onChange={(e) => setVideoDescription(e.target.value)}
-//                 className="w-full p-2 border rounded"
-//                 rows={4}
-//               />
-//             </div>
-            
-//             <div>
-//               <label className="block text-sm font-medium mb-1">Tags (comma separated)</label>
-//               <input
-//                 type="text"
-//                 value={videoTags}
-//                 onChange={(e) => setVideoTags(e.target.value)}
-//                 className="w-full p-2 border rounded"
-//                 placeholder="tag1, tag2, tag3"
-//               />
-//             </div>
-            
-//             <div>
-//               <label className="block text-sm font-medium mb-1">Privacy Status</label>
-//               <select
-//                 value={privacyStatus}
-//                 onChange={(e) => setPrivacyStatus(e.target.value)}
-//                 className="w-full p-2 border rounded"
-//               >
-//                 <option value="private">Private</option>
-//                 <option value="unlisted">Unlisted</option>
-//                 <option value="public">Public</option>
-//               </select>
-//             </div>
-            
-//             <div>
-//               <label className="block text-sm font-medium mb-1">Thumbnail (optional)</label>
-//               <input
-//                 type="file"
-//                 accept="image/*"
-//                 onChange={(e) => setThumbnailFile(e.target.files[0])}
-//                 className="w-full p-2 border rounded"
-//               />
-//             </div>
-            
-//             <button
-//               type="submit"
-//               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-//               disabled={isLoading || uploadVideoMutation.isLoading}
-//             >
-//               {isLoading || uploadVideoMutation.isLoading ? "Uploading..." : "Upload Video"}
-//             </button>
-//           </form>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
+              {/* All Videos Performance */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>All Videos Performance</CardTitle>
+                  <CardDescription>Compare performance across all videos</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {allVideosWithStats.isLoading ? (
+                    <div className="flex justify-center p-4"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                  ) : allVideosWithStats.data && allVideosWithStats.data.videos.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Video</TableHead>
+                            <TableHead className="text-right">Views</TableHead>
+                            <TableHead className="text-right">Likes</TableHead>
+                            <TableHead className="text-right">Comments</TableHead>
+                            <TableHead>Published</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+{allVideosWithStats.data.videos.map((video) => {
+  const youtubeDetails = video.youtubeDetails as { statistics?: { 
+    viewCount?: string;
+    likeCount?: string;
+    commentCount?: string;
+  }};
+  const statistics = youtubeDetails?.statistics ?? {
+    viewCount: "0",
+    likeCount: "0",
+    commentCount: "0",
+  };
 
-// export default YouTubeForm;
+  return (
+    <div key={video.title}>
+      <div>{video.title}</div>
+      <div>{formatNumber(Number(statistics.viewCount ?? 0))}</div>
+      <div>{formatNumber(Number(statistics.likeCount ?? 0))}</div>
+      <div>{formatNumber(Number(statistics.commentCount ?? 0))}</div>
+      <div>{new Date(video.createdAt).toLocaleDateString()}</div>
+    </div>
+  );
+})}
+                  
+     </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <p className="text-center py-4 text-gray-500 dark:text-gray-400">
+                      No video statistics available
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      )}
+    </div>
+  );
+};
+
+export default YouTubeComponent;

@@ -7,8 +7,13 @@ import { Button } from "@/components/ui/button";
 
 const CreatePostForm = () => {
   const [platform, setPlatform] = useState<"twitter" | "linkedin" | "facebook" | "instagram">("twitter");
-  const [prompt, setPrompt] = useState("");
+  const [topic, setTopic] = useState("");
   const [model, setModel] = useState<"gemini" | "deepseek">("gemini");
+  const [tone, setTone] = useState<"professional" | "casual" | "enthusiastic" | "informative" | "humorous" | "serious">("professional");
+  const [keyPoints, setKeyPoints] = useState<string[]>([]);
+  const [includeHashtags, setIncludeHashtags] = useState(true);
+  const [includeEmojis, setIncludeEmojis] = useState(true);
+  const [maxLength, setMaxLength] = useState<number | undefined>(undefined);
   const [result, setResult] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -29,7 +34,7 @@ const CreatePostForm = () => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-    createPost.mutate({ platform, prompt, model });
+    createPost.mutate({ platform, topic, model, tone, keyPoints, includeHashtags, includeEmojis, maxLength });
   };
 
   return (
@@ -55,8 +60,8 @@ const CreatePostForm = () => {
             <div>
               <label className="block text-sm font-medium mb-1">Prompt</label>
               <textarea 
-                value={prompt} 
-                onChange={(e) => setPrompt(e.target.value)} 
+                value={topic} 
+                onChange={(e) => setTopic(e.target.value)} 
                 className="w-full p-2 border rounded h-24"
                 placeholder="Write a post about..."
                 required
@@ -73,6 +78,57 @@ const CreatePostForm = () => {
                   <SelectItem value="deepseek">DeepSeek</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Tone</label>
+              <Select value={tone} onValueChange={(value: "professional" | "casual" | "enthusiastic" | "informative" | "humorous" | "serious") => setTone(value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Tone" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="professional">Professional</SelectItem>
+                  <SelectItem value="casual">Casual</SelectItem>
+                  <SelectItem value="enthusiastic">Enthusiastic</SelectItem>
+                  <SelectItem value="informative">Informative</SelectItem>
+                  <SelectItem value="humorous">Humorous</SelectItem>
+                  <SelectItem value="serious">Serious</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Key Points</label>
+              <textarea 
+                value={keyPoints.join("\n")} 
+                onChange={(e) => setKeyPoints(e.target.value.split("\n"))} 
+                className="w-full p-2 border rounded h-24"
+                placeholder="Enter key points, one per line..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Include Hashtags</label>
+              <input 
+                type="checkbox" 
+                checked={includeHashtags} 
+                onChange={(e) => setIncludeHashtags(e.target.checked)} 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Include Emojis</label>
+              <input 
+                type="checkbox" 
+                checked={includeEmojis} 
+                onChange={(e) => setIncludeEmojis(e.target.checked)} 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Max Length</label>
+              <input 
+                type="number" 
+                value={maxLength ?? ""} 
+                onChange={(e) => setMaxLength(e.target.value ? parseInt(e.target.value) : undefined)} 
+                className="w-full p-2 border rounded"
+                placeholder="Enter max length (optional)"
+              />
             </div>
           </form>
           <div className="mt-4 flex items-center justify-center">
@@ -100,7 +156,7 @@ const CreatePostForm = () => {
             </div>
           ) : (
             <div className="p-3 bg-white rounded whitespace-pre-wrap">
-              {result || "Output will appear here..."}
+              {result ?? "Output will appear here..."}
             </div>
           )}
         </div>
