@@ -5,9 +5,9 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
-const UpdatePostForm = () => {
+const UpdatePostForm = ({ initialContent }: { initialContent: string }) => {
   const [platform, setPlatform] = useState<"twitter" | "linkedin" | "facebook" | "instagram">("twitter");
-  const [originalContent, setOriginalContent] = useState("");
+  const [originalContent, setOriginalContent] = useState(initialContent);
   const [updatePrompt, setUpdatePrompt] = useState("");
   const [model, setModel] = useState<"gemini" | "deepseek">("gemini");
   const [result, setResult] = useState("");
@@ -91,7 +91,7 @@ const UpdatePostForm = () => {
                 </SelectContent>
               </Select>
             </div>
-
+ 
             <div>
               <label className="block text-sm font-medium mb-1">Save History</label>
               <input 

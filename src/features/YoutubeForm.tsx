@@ -1,129 +1,107 @@
 "use client"
-import React, { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
+import type React from "react"
+import { useState, useEffect, useRef } from "react"
+import Image from "next/image"
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Loader2, Upload, Edit2, FileVideo, Youtube, BarChart2 } from 'lucide-react';
-import { api } from '@/trpc/react';
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Loader2, Upload, Edit2, FileVideo, Youtube, BarChart2 } from "lucide-react"
+import { api } from "@/trpc/react"
 
 const YouTubeComponent = () => {
   // Local state
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedThumbnail, setSelectedThumbnail] = useState<File | null>(null);
-  const [videoTitle, setVideoTitle] = useState('');
-  const [videoDescription, setVideoDescription] = useState('');
-  const [videoTags, setVideoTags] = useState('');
-  const [privacyStatus, setPrivacyStatus] = useState<'private' | 'public' | 'unlisted'>('private');
-  const [selectedVideoId, setSelectedVideoId] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedThumbnail, setSelectedThumbnail] = useState<File | null>(null)
+  const [videoTitle, setVideoTitle] = useState("")
+  const [videoDescription, setVideoDescription] = useState("")
+  const [videoTags, setVideoTags] = useState("")
+  const [privacyStatus, setPrivacyStatus] = useState<"private" | "public" | "unlisted">("private")
+  const [selectedVideoId, setSelectedVideoId] = useState("")
+  const [isUploading, setIsUploading] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const thumbnailInputRef = useRef<HTMLInputElement>(null)
 
   // TRPC queries and mutations
-  const authStatus = api.youtube.checkAuthentication.useQuery();
-  const authUrlQuery = api.youtube.getAuthUrl.useQuery();
-  const saveAuthToken = api.youtube.saveAuthToken.useMutation();
+  const authStatus = api.youtube.checkAuthentication.useQuery()
+  const authUrlQuery = api.youtube.getAuthUrl.useQuery()
+  const saveAuthToken = api.youtube.saveAuthToken.useMutation()
   const userVideos = api.youtube.getUserVideos.useQuery(undefined, {
     enabled: authStatus.data?.isAuthenticated === true,
-  });
+  })
   const videoStatistics = api.youtube.getVideoStatistics.useQuery(
     { videoId: selectedVideoId },
-    { enabled: !!selectedVideoId && authStatus.data?.isAuthenticated === true }
-  );
+    { enabled: !!selectedVideoId && authStatus.data?.isAuthenticated === true },
+  )
   // Remove unused mutation declaration
-  const updateVideoMutation = api.youtube.updateVideo.useMutation();
+  const updateVideoMutation = api.youtube.updateVideo.useMutation()
   const channelStats = api.youtube.getChannelStatistics.useQuery(undefined, {
     enabled: authStatus.data?.isAuthenticated === true,
-  });
+  })
   const allVideosWithStats = api.youtube.getAllVideosWithStatistics.useQuery(undefined, {
     enabled: authStatus.data?.isAuthenticated === true,
-  });
+  })
 
   // Handle OAuth callback
   useEffect(() => {
-    const url = new URL(window.location.href);
-    const code = url.searchParams.get('code');
-    
+    const url = new URL(window.location.href)
+    const code = url.searchParams.get("code")
+
     if (code && authStatus.data?.isAuthenticated === false) {
       // Fix floating promise
-      void saveAuthToken.mutateAsync({ code })
+      void saveAuthToken
+        .mutateAsync({ code })
         .then(() => {
           // Remove code from URL
-          window.history.replaceState({}, document.title, window.location.pathname);
+          window.history.replaceState({}, document.title, window.location.pathname)
           // Refetch auth status
-          void authStatus.refetch();
+          void authStatus.refetch()
         })
-        .catch(error => {
-          console.error("Error saving auth token:", error);
-        });
+        .catch((error) => {
+          console.error("Error saving auth token:", error)
+        })
     }
-  // Fix dependency array
-  }, [authStatus.data?.isAuthenticated, saveAuthToken, authStatus]);
+    // Fix dependency array
+  }, [authStatus.data?.isAuthenticated, saveAuthToken, authStatus])
 
   // Handle file selection
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     // Fix optional chain
     if (event.target?.files?.[0]) {
-      setSelectedFile(event.target.files[0]);
+      setSelectedFile(event.target.files[0])
     }
-  };
+  }
 
   // Handle thumbnail selection
   const handleThumbnailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     // Fix optional chain
     if (event.target?.files?.[0]) {
-      setSelectedThumbnail(event.target.files[0]);
+      setSelectedThumbnail(event.target.files[0])
     }
-  };
+  }
 
   // Handle video upload
   const handleUpload = async () => {
-    if (!selectedFile || !videoTitle) return;
+    if (!selectedFile || !videoTitle) return
 
-    setIsUploading(true);
+    setIsUploading(true)
     try {
       // Extract tags array from the comma-separated string
-      const tagsArray = videoTags.split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
+      const tagsArray = videoTags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0)
 
       // Create FormData
-      const formData = new FormData();
-      formData.append('video', selectedFile);
+      const formData = new FormData()
+      formData.append("video", selectedFile)
       if (selectedThumbnail) {
-        formData.append('thumbnail', selectedThumbnail);
+        formData.append("thumbnail", selectedThumbnail)
       }
 
       // Create a payload with text data
@@ -132,54 +110,54 @@ const YouTubeComponent = () => {
         description: videoDescription,
         tags: tagsArray,
         privacyStatus,
-      };
+      }
 
       // Convert metadata to JSON string and append to formData
-      formData.append('metadata', JSON.stringify(payload));
+      formData.append("metadata", JSON.stringify(payload))
 
       // Send the form data to your API endpoint
-      const response = await fetch('/api/youtube/upload', {
-        method: 'POST',
+      const response = await fetch("/api/youtube/upload", {
+        method: "POST",
         body: formData,
-      });
+      })
 
       if (!response.ok) {
         // Fix unsafe assignment and member access
-        const errorData = await response.json() as { message?: string };
-        throw new Error(errorData.message ?? 'Failed to upload video');
+        const errorData = (await response.json()) as { message?: string }
+        throw new Error(errorData.message ?? "Failed to upload video")
       }
 
       // Reset form
-      setSelectedFile(null);
-      setSelectedThumbnail(null);
-      setVideoTitle('');
-      setVideoDescription('');
-      setVideoTags('');
-      setPrivacyStatus('private');
+      setSelectedFile(null)
+      setSelectedThumbnail(null)
+      setVideoTitle("")
+      setVideoDescription("")
+      setVideoTags("")
+      setPrivacyStatus("private")
 
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      if (thumbnailInputRef.current) thumbnailInputRef.current.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = ""
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = ""
 
       // Fix floating promises
-      void userVideos.refetch();
-      void allVideosWithStats.refetch();
+      void userVideos.refetch()
+      void allVideosWithStats.refetch()
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error("Upload failed:", error)
     } finally {
-      setIsUploading(false);
+      setIsUploading(false)
     }
-  };
+  }
 
   // Handle video update
   const handleUpdate = async () => {
-    if (!selectedVideoId || !videoTitle) return;
-    
-    setIsUpdating(true);
-    
+    if (!selectedVideoId || !videoTitle) return
+
+    setIsUpdating(true)
+
     try {
       // Prepare tags array
-      const tags = videoTags ? videoTags.split(',').map(tag => tag.trim()) : [];
-      
+      const tags = videoTags ? videoTags.split(",").map((tag) => tag.trim()) : []
+
       // Update video
       await updateVideoMutation.mutateAsync({
         videoId: selectedVideoId,
@@ -187,56 +165,54 @@ const YouTubeComponent = () => {
         description: videoDescription,
         tags,
         privacyStatus,
-      });
-      
+      })
+
       // Reset form
-      setVideoTitle('');
-      setVideoDescription('');
-      setVideoTags('');
-      setPrivacyStatus('private');
-      setSelectedVideoId('');
-      
+      setVideoTitle("")
+      setVideoDescription("")
+      setVideoTags("")
+      setPrivacyStatus("private")
+      setSelectedVideoId("")
+
       // Fix floating promises
-      void userVideos.refetch();
-      void allVideosWithStats.refetch();
+      void userVideos.refetch()
+      void allVideosWithStats.refetch()
     } catch (error) {
-      console.error('Update failed:', error);
+      console.error("Update failed:", error)
     } finally {
-      setIsUpdating(false);
+      setIsUpdating(false)
     }
-  };
+  }
 
   // Fill form with selected video data
   const selectVideoForEdit = (videoId: string) => {
-    if (!userVideos.data) return;
-    
-    const video = userVideos.data.find(v => String(v.youtubeId) === videoId);
+    if (!userVideos.data) return
+
+    const video = userVideos.data.find((v) => String(v.youtubeId) === videoId)
     if (video) {
-      setSelectedVideoId(videoId);
-      setVideoTitle(video.title);
+      setSelectedVideoId(videoId)
+      setVideoTitle(video.title)
       // Fix nullish coalescing
-      setVideoDescription(video.description ?? '');
+      setVideoDescription(video.description ?? "")
       // Fix toString issue
-      setVideoTags(
-        Array.isArray(video.tags)
-          ? video.tags.join(',')
-          : typeof video.tags === 'string'
-          ? video.tags
-          : ''
-      );
-      setPrivacyStatus(video.privacyStatus as 'private' | 'public' | 'unlisted');
+      setVideoTags(Array.isArray(video.tags) ? video.tags.join(",") : typeof video.tags === "string" ? video.tags : "")
+      setPrivacyStatus(video.privacyStatus as "private" | "public" | "unlisted")
     }
-  };
+  }
 
   // Format numbers for readability
   const formatNumber = (num: number) => {
-    return new Intl.NumberFormat().format(num);
-  };
+    return new Intl.NumberFormat().format(num)
+  }
 
   // Render authentication section
   const renderAuthSection = () => {
     if (authStatus.isLoading) {
-      return <div className="flex justify-center p-4"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+      return (
+        <div className="flex justify-center p-4">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      )
     }
 
     if (authStatus.data?.isAuthenticated) {
@@ -246,7 +222,7 @@ const YouTubeComponent = () => {
             <Youtube className="mr-2" /> Connected to YouTube
           </p>
         </div>
-      );
+      )
     }
 
     return (
@@ -260,8 +236,8 @@ const YouTubeComponent = () => {
           </Button>
         )}
       </div>
-    );
-  };
+    )
+  }
 
   // Render YouTube component
   return (
@@ -269,9 +245,9 @@ const YouTubeComponent = () => {
       <h1 className="text-3xl font-bold mb-6 flex items-center">
         <Youtube className="mr-2" /> YouTube Manager
       </h1>
-      
+
       {renderAuthSection()}
-      
+
       {authStatus.data?.isAuthenticated && (
         <Tabs defaultValue="videos">
           <TabsList className="mb-6">
@@ -288,7 +264,7 @@ const YouTubeComponent = () => {
               <BarChart2 className="mr-2" /> Analytics
             </TabsTrigger>
           </TabsList>
-          
+
           {/* Videos Tab */}
           <TabsContent value="videos">
             <Card>
@@ -298,7 +274,9 @@ const YouTubeComponent = () => {
               </CardHeader>
               <CardContent>
                 {userVideos.isLoading ? (
-                  <div className="flex justify-center p-4"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                  <div className="flex justify-center p-4">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
                 ) : userVideos.data && userVideos.data.length > 0 ? (
                   <Table>
                     <TableHeader>
@@ -315,8 +293,8 @@ const YouTubeComponent = () => {
                           <TableCell>
                             {video.thumbnailUrl ? (
                               // Fix <img> warning with next/image
-                              <Image 
-                                src={video.thumbnailUrl} 
+                              <Image
+                                src={video.thumbnailUrl || "/placeholder.svg"}
                                 alt={video.title}
                                 width={80}
                                 height={45}
@@ -335,13 +313,16 @@ const YouTubeComponent = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <span className={
-                              video.privacyStatus === 'public' 
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                : video.privacyStatus === 'unlisted'
-                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                            + ' px-2 py-1 rounded-full text-xs'}>
+                            <span
+                              className={
+                                video.privacyStatus === "public"
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                  : video.privacyStatus === "unlisted"
+                                    ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                                    : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200" +
+                                      " px-2 py-1 rounded-full text-xs"
+                              }
+                            >
                               {video.privacyStatus}
                             </span>
                           </TableCell>
@@ -369,7 +350,7 @@ const YouTubeComponent = () => {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           {/* Upload Tab */}
           <TabsContent value="upload">
             <Card>
@@ -377,24 +358,24 @@ const YouTubeComponent = () => {
                 <CardTitle>Upload New Video</CardTitle>
                 <CardDescription>Share your content on YouTube</CardDescription>
               </CardHeader>
-                <CardContent>
+              <CardContent>
                 <div className="space-y-4">
                   <div>
-                  <label className="block text-sm font-medium mb-1">Video File</label>
-                  <Input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="video/*,.mov"
-                    onChange={handleFileChange}
-                    className="cursor-pointer"
-                  />
-                  {selectedFile && (
-                    <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">
-                    Selected: {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
-                    </p>
-                  )}
+                    <label className="block text-sm font-medium mb-1">Video File</label>
+                    <Input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="video/*,.mov"
+                      onChange={handleFileChange}
+                      className="cursor-pointer"
+                    />
+                    {selectedFile && (
+                      <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">
+                        Selected: {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
+                      </p>
+                    )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-1">Custom Thumbnail (Optional)</label>
                     <Input
@@ -410,7 +391,7 @@ const YouTubeComponent = () => {
                       </p>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-1">Title</label>
                     <Input
@@ -420,7 +401,7 @@ const YouTubeComponent = () => {
                       maxLength={100}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-1">Description</label>
                     <Textarea
@@ -430,7 +411,7 @@ const YouTubeComponent = () => {
                       rows={4}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-1">Tags (comma separated)</label>
                     <Input
@@ -439,10 +420,13 @@ const YouTubeComponent = () => {
                       placeholder="tag1, tag2, tag3"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-1">Privacy Status</label>
-                    <Select value={privacyStatus} onValueChange={(value: 'private' | 'public' | 'unlisted') => setPrivacyStatus(value)}>
+                    <Select
+                      value={privacyStatus}
+                      onValueChange={(value: "private" | "public" | "unlisted") => setPrivacyStatus(value)}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select privacy status" />
                       </SelectTrigger>
@@ -456,8 +440,8 @@ const YouTubeComponent = () => {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button 
-                  onClick={handleUpload} 
+                <Button
+                  onClick={handleUpload}
                   disabled={!selectedFile || !videoTitle || isUploading}
                   className="w-full"
                 >
@@ -476,7 +460,7 @@ const YouTubeComponent = () => {
               </CardFooter>
             </Card>
           </TabsContent>
-          
+
           {/* Edit Tab */}
           <TabsContent value="edit">
             <Card>
@@ -501,7 +485,7 @@ const YouTubeComponent = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   {selectedVideoId && (
                     <>
                       <div>
@@ -513,7 +497,7 @@ const YouTubeComponent = () => {
                           maxLength={100}
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium mb-1">Description</label>
                         <Textarea
@@ -523,7 +507,7 @@ const YouTubeComponent = () => {
                           rows={4}
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium mb-1">Tags (comma separated)</label>
                         <Input
@@ -532,10 +516,13 @@ const YouTubeComponent = () => {
                           placeholder="tag1, tag2, tag3"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium mb-1">Privacy Status</label>
-                        <Select value={privacyStatus} onValueChange={(value: 'private' | 'public' | 'unlisted') => setPrivacyStatus(value)}>
+                        <Select
+                          value={privacyStatus}
+                          onValueChange={(value: "private" | "public" | "unlisted") => setPrivacyStatus(value)}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select privacy status" />
                           </SelectTrigger>
@@ -551,8 +538,8 @@ const YouTubeComponent = () => {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button 
-                  onClick={handleUpdate} 
+                <Button
+                  onClick={handleUpdate}
                   disabled={!selectedVideoId || !videoTitle || isUpdating}
                   className="w-full"
                 >
@@ -571,7 +558,7 @@ const YouTubeComponent = () => {
               </CardFooter>
             </Card>
           </TabsContent>
-          
+
           {/* Analytics Tab */}
           <TabsContent value="analytics">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -583,24 +570,34 @@ const YouTubeComponent = () => {
                 </CardHeader>
                 <CardContent>
                   {channelStats.isLoading ? (
-                    <div className="flex justify-center p-4"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                    <div className="flex justify-center p-4">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
                   ) : channelStats.data ? (
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
                         <p className="text-sm text-gray-500 dark:text-gray-400">Subscribers</p>
-                        <p className="text-2xl font-bold">{formatNumber(Number(channelStats.data.channel?.statistics?.subscriberCount ?? 0))}</p>
+                        <p className="text-2xl font-bold">
+                          {formatNumber(Number(channelStats.data.channel?.statistics?.subscriberCount ?? 0))}
+                        </p>
                       </div>
                       <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
                         <p className="text-sm text-gray-500 dark:text-gray-400">Views</p>
-                        <p className="text-2xl font-bold">{formatNumber(Number(channelStats.data.channel?.statistics?.viewCount ?? 0))}</p>
+                        <p className="text-2xl font-bold">
+                          {formatNumber(Number(channelStats.data.channel?.statistics?.viewCount ?? 0))}
+                        </p>
                       </div>
                       <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
                         <p className="text-sm text-gray-500 dark:text-gray-400">Videos</p>
-                        <p className="text-2xl font-bold">{formatNumber(Number(channelStats.data.channel?.statistics?.videoCount ?? 0))}</p>
+                        <p className="text-2xl font-bold">
+                          {formatNumber(Number(channelStats.data.channel?.statistics?.videoCount ?? 0))}
+                        </p>
                       </div>
                       <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
                         <p className="text-sm text-gray-500 dark:text-gray-400">Comments</p>
-                        <p className="text-2xl font-bold">{formatNumber(Number(channelStats.data.channel?.statistics?.commentCount ?? 0))}</p>
+                        <p className="text-2xl font-bold">
+                          {formatNumber(Number(channelStats.data.channel?.statistics?.commentCount ?? 0))}
+                        </p>
                       </div>
                     </div>
                   ) : (
@@ -610,7 +607,7 @@ const YouTubeComponent = () => {
                   )}
                 </CardContent>
               </Card>
-              
+
               {/* Video Statistics */}
               <Card>
                 <CardHeader>
@@ -632,41 +629,50 @@ const YouTubeComponent = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  
-                  {selectedVideoId && (
-                    videoStatistics.isLoading ? (
-                      <div className="flex justify-center p-4"><Loader2 className="h-8 w-8 animate-spin" /></div>
+
+                  {selectedVideoId &&
+                    (videoStatistics.isLoading ? (
+                      <div className="flex justify-center p-4">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                      </div>
                     ) : videoStatistics.data ? (
                       <div className="grid grid-cols-2 gap-4">
                         <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
                           <p className="text-sm text-gray-500 dark:text-gray-400">Views</p>
                           {/* Fix unsafe member access */}
-                          <p className="text-2xl font-bold">{formatNumber(Number(videoStatistics.data.statistics?.viewCount ?? 0))}</p>
+                          <p className="text-2xl font-bold">
+                            {formatNumber(Number(videoStatistics.data.statistics?.viewCount ?? 0))}
+                          </p>
                         </div>
                         <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
                           <p className="text-sm text-gray-500 dark:text-gray-400">Likes</p>
                           {/* Fix unsafe member access */}
-                          <p className="text-2xl font-bold">{formatNumber(Number(videoStatistics.data.statistics?.likeCount ?? 0))}</p>
+                          <p className="text-2xl font-bold">
+                            {formatNumber(Number(videoStatistics.data.statistics?.likeCount ?? 0))}
+                          </p>
                         </div>
                         <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
                           <p className="text-sm text-gray-500 dark:text-gray-400">Comments</p>
                           {/* Fix unsafe member access */}
-                          <p className="text-2xl font-bold">{formatNumber(Number(videoStatistics.data.statistics?.commentCount ?? 0))}</p>
+                          <p className="text-2xl font-bold">
+                            {formatNumber(Number(videoStatistics.data.statistics?.commentCount ?? 0))}
+                          </p>
                         </div>
                         <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
                           <p className="text-sm text-gray-500 dark:text-gray-400">Favorites</p>
-                          <p className="text-2xl font-bold">{formatNumber(Number(videoStatistics.data.statistics?.favoriteCount ?? 0))}</p>
+                          <p className="text-2xl font-bold">
+                            {formatNumber(Number(videoStatistics.data.statistics?.favoriteCount ?? 0))}
+                          </p>
                         </div>
                       </div>
                     ) : (
                       <p className="text-center py-4 text-gray-500 dark:text-gray-400">
                         Select a video to view statistics
                       </p>
-                    )
-                  )}
+                    ))}
                 </CardContent>
               </Card>
-              
+
               {/* All Videos Performance */}
               <Card className="lg:col-span-2">
                 <CardHeader>
@@ -675,7 +681,9 @@ const YouTubeComponent = () => {
                 </CardHeader>
                 <CardContent>
                   {allVideosWithStats.isLoading ? (
-                    <div className="flex justify-center p-4"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                    <div className="flex justify-center p-4">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
                   ) : allVideosWithStats.data && allVideosWithStats.data.videos.length > 0 ? (
                     <div className="overflow-x-auto">
                       <Table>
@@ -689,36 +697,41 @@ const YouTubeComponent = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-{allVideosWithStats.data.videos.map((video) => {
-  const youtubeDetails = video.youtubeDetails as { statistics?: { 
-    viewCount?: string;
-    likeCount?: string;
-    commentCount?: string;
-  }};
-  const statistics = youtubeDetails?.statistics ?? {
-    viewCount: "0",
-    likeCount: "0",
-    commentCount: "0",
-  };
+                          {allVideosWithStats.data.videos.map((video) => {
+                            const youtubeDetails = video.youtubeDetails as {
+                              statistics?: {
+                                viewCount?: string
+                                likeCount?: string
+                                commentCount?: string
+                              }
+                            }
+                            const statistics = youtubeDetails?.statistics ?? {
+                              viewCount: "0",
+                              likeCount: "0",
+                              commentCount: "0",
+                            }
 
-  return (
-    <div key={video.title}>
-      <div>{video.title}</div>
-      <div>{formatNumber(Number(statistics.viewCount ?? 0))}</div>
-      <div>{formatNumber(Number(statistics.likeCount ?? 0))}</div>
-      <div>{formatNumber(Number(statistics.commentCount ?? 0))}</div>
-      <div>{new Date(video.createdAt).toLocaleDateString()}</div>
-    </div>
-  );
-})}
-                  
-     </TableBody>
+                            return (
+                              <TableRow key={video.title}>
+                                <TableCell>{video.title}</TableCell>
+                                <TableCell className="text-right">
+                                  {formatNumber(Number(statistics.viewCount ?? 0))}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {formatNumber(Number(statistics.likeCount ?? 0))}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {formatNumber(Number(statistics.commentCount ?? 0))}
+                                </TableCell>
+                                <TableCell>{new Date(video.createdAt).toLocaleDateString()}</TableCell>
+                              </TableRow>
+                            )
+                          })}
+                        </TableBody>
                       </Table>
                     </div>
                   ) : (
-                    <p className="text-center py-4 text-gray-500 dark:text-gray-400">
-                      No video statistics available
-                    </p>
+                    <p className="text-center py-4 text-gray-500 dark:text-gray-400">No video statistics available</p>
                   )}
                 </CardContent>
               </Card>
@@ -727,7 +740,8 @@ const YouTubeComponent = () => {
         </Tabs>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default YouTubeComponent;
+export default YouTubeComponent
+
