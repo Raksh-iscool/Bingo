@@ -1,4 +1,4 @@
-
+"use client"
 
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from "@/components/ui/navigation-menu"
 import Link from "next/link"
