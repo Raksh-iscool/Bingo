@@ -4,7 +4,8 @@ import { updateSocialPost } from "@/server/api/routers/update-post-ai";
 import { generateSocialImage } from "@/server/api/routers/create-image-post-api";
 import { twitterRouter } from "@/server/api/routers/twitter";
 import { youtubeRouter } from "@/server/api/routers/youtube-api";
-import { youtube } from "googleapis/build/src/apis/youtube";
+import { youtubeScheduleRouter } from "@/server/api/routers/youtube-schedule";
+import { twitterScheduleRouter } from "@/server/api/routers/twitter-schedule";
 
 /**
  * This is the primary router for your server.
@@ -16,7 +17,9 @@ export const appRouter = createTRPCRouter({
     updatePost: updateSocialPost,
     generateImagePost: generateSocialImage,
     youtube : youtubeRouter,
-    twitter: twitterRouter, // add twitterRouter to the appRouter objec
+    twitter: twitterRouter,
+    youtubeSchedule: youtubeScheduleRouter,
+    twitterSchedule: twitterScheduleRouter,
 });
 
 // export type definition of API

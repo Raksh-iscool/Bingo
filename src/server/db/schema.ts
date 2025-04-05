@@ -166,7 +166,7 @@ export const socialAccounts = createTable(
 export const twitterTokens = createTable("twitter_token", (d) => ({
   id: d.serial().primaryKey(),
   accessToken: d.text().notNull(),
-  refreshToken: d.text().notNull(),
+  refreshToken: d.text(),
   expiryDate: d.timestamp().notNull(),
   userId: d.varchar({ length: 256 }).notNull(), // Link to your user system
   createdAt: d
@@ -197,6 +197,46 @@ export const twitterPosts = createTable(
     index("twitter_post_user_id_idx").on(t.userId),
     index("twitter_post_tweet_id_idx").on(t.tweetId),
     index("twitter_post_twitter_user_id_idx").on(t.twitterUserId), // Add index for twitterUserId
+  ],
+);
+
+// Store Reddit auth tokens
+export const linkedinTokens = createTable("linkedin_token", (d) => ({
+  id: d.serial().primaryKey(),
+  accessToken: d.text().notNull(),
+  refreshToken: d.text(),
+  expiryDate: d.timestamp().notNull(),
+  userId: d.varchar({ length: 256 }).notNull(), // Link to your user system
+  createdAt: d
+    .timestamp({ withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+}));
+
+// Store Reddit posts
+export const linkedinPosts = createTable(
+  "linkedin_post",
+  (d) => ({
+    id: d.serial().primaryKey(),
+    redditId: d.varchar({ length: 50 }).notNull(),
+    subreddit: d.varchar({ length: 100 }).notNull(),
+    title: d.varchar({ length: 300 }).notNull(),
+    content: d.text(),
+    permalink: d.text(),
+    userId: d.varchar({ length: 256 }).notNull(),
+    status: d.varchar({ length: 20 }).default("draft").notNull(),
+    metrics: d.json(),
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+  }),
+  (t) => [
+    index("reddit_post_user_id_idx").on(t.userId),
+    index("reddit_post_reddit_id_idx").on(t.redditId),
+    index("reddit_post_subreddit_idx").on(t.subreddit),
   ],
 );
 
@@ -237,5 +277,58 @@ export const youtubeVideos = createTable(
   (t) => [
     index("youtube_video_user_id_idx").on(t.userId),
     index("youtube_video_youtube_id_idx").on(t.youtubeId),
+  ],
+);
+
+export const scheduledYoutubeVideos = createTable(
+  "scheduled_youtube_video",
+  (d) => ({
+    id: d.serial().primaryKey(),
+    userId: d.varchar({ length: 256 }).notNull(),
+    title: d.varchar({ length: 256 }).notNull(),
+    description: d.text(),
+    tags: d.json(),
+    privacyStatus: d.varchar({ length: 20 }).default("private").notNull(),
+    thumbnailUrl: d.text(),
+    videoUrl: d.text().notNull(), // URL to the video file to upload
+    scheduleId: d.varchar({ length: 256 }), // QStash schedule ID
+    scheduledFor: d.timestamp({ withTimezone: true }).notNull(),
+    status: d.varchar({ length: 20 }).default("scheduled").notNull(), // scheduled, processing, completed, failed
+    youtubeId: d.varchar({ length: 50 }), // Will be filled after successful upload
+    uploadResult: d.json(), // Store the result of the upload operation
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+  }),
+  (t) => [
+    index("scheduled_youtube_video_user_id_idx").on(t.userId),
+    index("scheduled_youtube_video_status_idx").on(t.status),
+    index("scheduled_youtube_video_scheduled_for_idx").on(t.scheduledFor),
+  ],
+);
+
+export const scheduledTweets = createTable(
+  "scheduled_tweet",
+  (d) => ({
+    id: d.serial().primaryKey(),
+    userId: d.varchar({ length: 256 }).notNull(), // Link to your user system
+    content: d.text().notNull(), // Tweet content
+    scheduledFor: d.timestamp({ withTimezone: true }).notNull(), // When to post
+    status: d.varchar({ length: 20 }).default("scheduled").notNull(), // scheduled, processing, completed, failed
+    tweetId: d.varchar({ length: 50 }), // ID of the posted tweet (after scheduled run)
+    scheduleId: d.varchar({ length: 256 }), // QStash schedule ID
+    postResult: d.json(), // Result from posting the tweet
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+  }),
+  (t) => [
+    index("scheduled_tweet_user_id_idx").on(t.userId),
+    index("scheduled_tweet_status_idx").on(t.status),
+    index("scheduled_tweet_scheduled_for_idx").on(t.scheduledFor),
   ],
 );
