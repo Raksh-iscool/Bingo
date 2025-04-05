@@ -1,5 +1,7 @@
+
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+
 import { google } from 'googleapis';
 import { desc, eq } from 'drizzle-orm';
 import { db } from '@/server/db';
@@ -78,18 +80,22 @@ export async function saveToken(token: Credentials, userId: string): Promise<voi
   if (existingToken) {
     await db.update(youtubeTokens)
       .set({
-        accessToken: String(token.access_token),
-        refreshToken: token.refresh_token ? String(token.refresh_token) : existingToken.refreshToken,
-        expiryDate: new Date(Number(token.expiry_date)),
+
+        accessToken: token.access_token!,
+        refreshToken: token.refresh_token ?? existingToken.refreshToken, // Keep existing refresh_token if new one isn't provided
+        expiryDate: new Date(token.expiry_date!),
+
         updatedAt: new Date()
       })
       .where(eq(youtubeTokens.userId, userId));
   } else {
     await db.insert(youtubeTokens).values({
       userId,
-      accessToken: String(token.access_token),
-      refreshToken: String(token.refresh_token),
-      expiryDate: new Date(Number(token.expiry_date))
+
+      accessToken: token.access_token!,
+      refreshToken: token.refresh_token!,
+      expiryDate: new Date(token.expiry_date!)
+
     });
   }
 }
@@ -219,10 +225,12 @@ export async function uploadVideo({
       })
       .returning();
     
-    // // Upload thumbnail if provided
-    // if (thumbnailBuffer && videoId) {
-    //   await uploadThumbnail(videoId, thumbnailBuffer, userId);
-    // }
+
+    // Upload thumbnail if provided
+    if (thumbnailBuffer) {
+      await uploadThumbnail(videoId, thumbnailBuffer, userId);
+    }
+
     
     return {
       success: true,

@@ -20,7 +20,7 @@ export const generateSocialPost = protectedProcedure
       prompt: z.string().min(1, "Prompt cannot be empty"),
       model: AIModel.default("gemini"),
     }),
-  )
+  ) 
   .output(
     z.object({
       content: z.string(),
