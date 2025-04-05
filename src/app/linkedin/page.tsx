@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/trpc/react";
+import { log } from "console";
 
 export default function TwitterPage() {
 
@@ -16,6 +17,9 @@ export default function TwitterPage() {
     } finally {
     }
   };
+
+
+  
   
    
 

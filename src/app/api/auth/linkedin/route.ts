@@ -9,7 +9,7 @@ export async function GET() {
   const state = crypto.randomBytes(16).toString('hex');
 
   // 2. Build authorization URL with updated scopes
-  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent('http://localhost:3000/api/auth/linkedin/callback')}&state=${encodeURIComponent(state)}&scope=${encodeURIComponent('openid profile email')}`;
+  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent('http://localhost:3000/api/auth/linkedin/callback')}&state=${encodeURIComponent(state)}&scope=${encodeURIComponent('openid profile email w_member_social rw_events r_events')}`;
 
   // 3. Set secure cookies
   const response = NextResponse.redirect(authUrl);
