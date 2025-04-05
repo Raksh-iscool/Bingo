@@ -1,6 +1,10 @@
 import {  NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { db } from "@/server/db";
+import { twitterTokens } from "@/server/db/schema";
+import { authClient } from "@/lib/auth-client";
+import { auth } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -46,11 +50,17 @@ export async function GET(request: NextRequest) {
       body: new URLSearchParams({
         grant_type: "authorization_code",
         code,
-        redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/twitter/callback`,
+        redirect_uri: `http://localhost:3000/api/auth/twitter/callback`,
         code_verifier: codeVerifier,
         client_id: process.env.TWITTER_CLIENT_ID!,
       }),
     });
+
+    const session = await auth.api.getSession({
+      headers: await headers() // you need to pass the headers object.
+    })
+    const userId = session?.user?.id;
+    
 
     const tokens = await tokenResponse.json() as {
       access_token: string;
@@ -67,18 +77,16 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(new URL("/", request.url));
     
     // Set cookies (or use your session management)
-    response.cookies.set("twitter_access_token", tokens.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: tokens.expires_in ?? 7200,
-    });
 
-    if (tokens.refresh_token) {
-      response.cookies.set("twitter_refresh_token", tokens.refresh_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-      });
-    }
+    
+// Store tokens in database using Drizzle ORM
+    
+    await db.insert(twitterTokens).values({
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token!,
+      expiryDate: new Date(Date.now() + (tokens.expires_in ?? 0) * 1000),
+      userId: userId ?? "user_id",
+    });
 
     // Clean up PKCE cookies
     response.cookies.delete("twitter_code_verifier");

@@ -3,7 +3,9 @@ import { z } from "zod";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import { protectedProcedure } from "@/server/api/trpc";
- 
+import { db } from "@/server/db";
+import { socialImages } from "@/server/db/schema";
+
 const SocialPlatform = z.enum([
   "twitter",
   "linkedin",
@@ -25,6 +27,7 @@ export const generateSocialImage = protectedProcedure
       prompt: z.string().min(1, "Prompt cannot be empty"),
       size: ImageSize.default("square"),
       style: z.string().optional(),
+      contentId: z.number().optional(), // Optional reference to existing content
     }),
   )
   .output(
@@ -32,9 +35,10 @@ export const generateSocialImage = protectedProcedure
       imageBase64: z.string(),
       mimeType: z.string(),
       altText: z.string(),
+      imageId: z.number(),
     }),
   )
-  .mutation(async ({ input }) => {
+  .mutation(async ({ input, ctx }) => {
     try {
       const stylePrompt = input.style 
         ? `Style: ${input.style}. `
@@ -81,10 +85,34 @@ export const generateSocialImage = protectedProcedure
         maxTokens: 100,
       });
 
+      const altText = altTextResult.text?.trim() || input.prompt;
+      
+      // Remove the storage upload and directly save to database
+      const [savedImage] = await db.insert(socialImages).values({
+        userId: ctx.user.id,
+        contentId: input.contentId,
+        imageUrl: `data:${imageFile.mimeType};base64,${imageFile.base64}`, // Create data URL
+        imageBase64: imageFile.base64,
+        mimeType: imageFile.mimeType,
+        altText,
+        size: input.size,
+        prompt: input.prompt,
+        style: input.style,
+        modelUsed: "gemini-2.0-flash-exp",
+      }).returning();
+
+      if (!savedImage) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to save image to database",
+        });
+      }
+
       return {
         imageBase64: imageFile.base64,
         mimeType: imageFile.mimeType,
-        altText: altTextResult.text?.trim() || input.prompt,
+        altText,
+        imageId: savedImage.id,
       };
     } catch (error) {
       console.error("Error generating social media image:", error);

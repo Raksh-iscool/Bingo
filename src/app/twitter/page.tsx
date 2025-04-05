@@ -19,8 +19,20 @@ export default function TwitterPage() {
       setIsLoading(false);
     } else {
       setIsConnected(false); 
+      setIsLoading(false);
     }
   }, []);
+
+  const handleTwitterConnect = async () => {
+    try {
+      // Redirect to our backend auth route
+      window.location.href = "/api/auth/twitter";
+    } catch (error) {
+      console.error('Twitter auth error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   
 
@@ -32,6 +44,7 @@ export default function TwitterPage() {
         <div className="text-green-600 font-semibold">Connected to Twitter</div>
       ) : (
         <button
+          onClick={handleTwitterConnect}
           disabled={isLoading}
           className="rounded-full bg-[#1DA1F2] px-6 py-3 font-semibold text-white hover:bg-[#1a8cd8] disabled:opacity-50"
         >

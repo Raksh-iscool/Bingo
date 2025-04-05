@@ -8,22 +8,36 @@ import { twitterTokens } from "@/server/db/schema";
 import { db } from "@/server/db";
 
 export const twitterRouter = createTRPCRouter({
-  createTweet: publicProcedure
-    .mutation(async ({ input: _input, ctx: _ctx }) => {
+  createTweet: protectedProcedure
+    .input(z.object({
+      text: z.string().min(1).max(280)
+    }))
+    .mutation(async ({ input, ctx}) => {
       try {
-        const cookieStore = await cookies();
-        const accessToken = cookieStore.get('twitterAccessToken')?.value;
+        console.log(input);
+        
+        const userId = ctx.session?.user.id;
+        if (!userId) throw new Error("User not authenticated");
+        
+        const token = await db.query.twitterTokens.findFirst({
+          where: eq(twitterTokens.userId, userId)
+        });
+        
+        const accessToken = token?.accessToken;
         // 1. Verify authentication
         console.log(accessToken);
         
         if (!accessToken) {
           throw new Error("Please authenticate with Twitter first");
         }
+        if(!input){
+          throw new Error("No input provided");
+        }
 
         // 2. Validate input (redundant check since Zod already validated)
-        // if (!input.text || typeof input.text !== 'string') {
-        //   throw new Error("Invalid tweet text");
-        // }
+        if (!input.text || typeof input.text !== 'string') {
+          throw new Error("Invalid tweet text");
+        }
         
         // 3. Create tweet
         const response = await fetch("https://api.twitter.com/2/tweets", {
@@ -34,7 +48,7 @@ export const twitterRouter = createTRPCRouter({
             "x-client-uuid": crypto.randomUUID(),
           },
           body: JSON.stringify({
-            text: "finally witnessed kanye my goat",
+            text: input.text,
             // reply_settings: input.replySettings,
           }),
         });
