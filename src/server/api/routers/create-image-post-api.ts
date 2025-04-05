@@ -77,7 +77,7 @@ export const generateSocialImage = protectedProcedure
           message: "No image was generated",
         });
       }
-
+ 
       // Generate SEO-friendly alt text
       const altTextResult = await generateText({
         model: google("gemini-1.5-flash"),

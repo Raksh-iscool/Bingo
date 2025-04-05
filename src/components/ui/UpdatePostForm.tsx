@@ -14,6 +14,7 @@ const UpdatePostForm = () => {
   const [isSignificantChange, setIsSignificantChange] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [saveHistory, setSaveHistory] = useState(true); // New state for saveHistory
 
   const updatePost = api.updatePost.useMutation({
     onSuccess: (data) => {
@@ -32,7 +33,7 @@ const UpdatePostForm = () => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-    updatePost.mutate({ platform, originalContent, updatePrompt, model });
+    updatePost.mutate({ platform, originalContent, updatePrompt, model, saveHistory }); // Pass saveHistory
   };
 
   return (
@@ -89,6 +90,17 @@ const UpdatePostForm = () => {
                   <SelectItem value="deepseek">DeepSeek</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Save History</label>
+              <input 
+                type="checkbox" 
+                checked={saveHistory} 
+                onChange={(e) => setSaveHistory(e.target.checked)} 
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+              />
+              <span className="ml-2 text-sm text-gray-600">Enable saving update history</span>
             </div>
           </form>
 
