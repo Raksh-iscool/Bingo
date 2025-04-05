@@ -162,6 +162,45 @@ export const socialAccounts = createTable(
 );
 
 // Store YouTube auth tokens
+// Store Twitter auth tokens
+export const twitterTokens = createTable("twitter_token", (d) => ({
+  id: d.serial().primaryKey(),
+  accessToken: d.text().notNull(),
+  refreshToken: d.text().notNull(),
+  expiryDate: d.timestamp().notNull(),
+  userId: d.varchar({ length: 256 }).notNull(), // Link to your user system
+  createdAt: d
+    .timestamp({ withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+}));
+
+// Store Twitter posts
+export const twitterPosts = createTable(
+  "twitter_post",
+  (d) => ({
+    id: d.serial().primaryKey(),
+    tweetId: d.varchar({ length: 50 }).notNull(),
+    twitterUserId: d.varchar({ length: 50 }).notNull(), // Twitter user ID
+    content: d.text().notNull(),
+    userId: d.varchar({ length: 256 }).notNull(),
+    status: d.varchar({ length: 20 }).default("draft").notNull(),
+    metrics: d.json(),
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+  }),
+  (t) => [
+    index("twitter_post_user_id_idx").on(t.userId),
+    index("twitter_post_tweet_id_idx").on(t.tweetId),
+    index("twitter_post_twitter_user_id_idx").on(t.twitterUserId), // Add index for twitterUserId
+  ],
+);
+
+// Store YouTube auth tokens
 export const youtubeTokens = createTable("youtube_token", (d) => ({
   id: d.serial().primaryKey(),
   accessToken: d.text().notNull(),
