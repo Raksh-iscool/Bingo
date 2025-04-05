@@ -62,6 +62,105 @@ export const verification = pgTable("verification", {
   updatedAt: timestamp("updated_at"),
 });
 
+// Social content table to store generated social posts
+export const socialContent = createTable(
+  "social_content",
+  (d) => ({
+    id: d.serial().primaryKey(),
+    userId: d.varchar({ length: 256 }).notNull(),
+    platform: d.varchar({ length: 20 }).notNull(), // twitter, linkedin, facebook, instagram
+    content: d.text().notNull(),
+    imageUrl: d.text(),
+    imageAltText: d.text(),
+    status: d.varchar({ length: 20 }).default("draft").notNull(), // draft, published, scheduled
+    scheduledFor: d.timestamp({ withTimezone: true }),
+    publishedAt: d.timestamp({ withTimezone: true }),
+    engagement: d.json(), // Store engagement metrics
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+  }),
+  (t) => [
+    index("social_content_user_id_idx").on(t.userId),
+    index("social_content_platform_idx").on(t.platform),
+    index("social_content_status_idx").on(t.status),
+  ],
+);
+
+// Social content revision history
+export const socialContentHistory = createTable(
+  "social_content_history",
+  (d) => ({
+    id: d.serial().primaryKey(),
+    contentId: d.integer().notNull().references(() => socialContent.id, { onDelete: "cascade" }),
+    previousContent: d.text().notNull(),
+    updatedContent: d.text().notNull(),
+    updatePrompt: d.text(),
+    modelUsed: d.varchar({ length: 20 }).notNull(), // gemini, deepseek, etc.
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    createdBy: d.varchar({ length: 256 }).notNull(),
+  }),
+  (t) => [
+    index("social_content_history_content_id_idx").on(t.contentId),
+  ],
+);
+
+// Social media image storage
+export const socialImages = createTable(
+  "social_image",
+  (d) => ({
+    id: d.serial().primaryKey(),
+    contentId: d.integer().references(() => socialContent.id, { onDelete: "set null" }),
+    userId: d.varchar({ length: 256 }).notNull(),
+    imageUrl: d.text().notNull(),
+    imageBase64: d.text().notNull(), // Add this field
+    mimeType: d.varchar({ length: 50 }).notNull(), // Add this field
+    altText: d.text(),
+    size: d.varchar({ length: 20 }).notNull(), // square, portrait, landscape, twitter
+    prompt: d.text(),
+    style: d.varchar({ length: 100 }),
+    modelUsed: d.varchar({ length: 20 }).notNull(), // gemini, etc.
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  }),
+  (t) => [
+    index("social_image_user_id_idx").on(t.userId),
+    index("social_image_content_id_idx").on(t.contentId),
+  ],
+);
+
+// Social account connections
+export const socialAccounts = createTable(
+  "social_account",
+  (d) => ({
+    id: d.serial().primaryKey(),
+    userId: d.varchar({ length: 256 }).notNull().references(() => user.id, { onDelete: "cascade" }),
+    platform: d.varchar({ length: 20 }).notNull(), // twitter, linkedin, facebook, instagram
+    platformAccountId: d.varchar({ length: 256 }).notNull(),
+    accessToken: d.text().notNull(),
+    refreshToken: d.text(),
+    tokenExpiresAt: d.timestamp({ withTimezone: true }),
+    profileName: d.varchar({ length: 200 }),
+    profileImage: d.text(),
+    isActive: d.boolean().default(true).notNull(),
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+  }),
+  (t) => [
+    index("social_account_user_platform_idx").on(t.userId, t.platform),
+  ],
+);
+
 // Store YouTube auth tokens
 export const youtubeTokens = createTable("youtube_token", (d) => ({
   id: d.serial().primaryKey(),
