@@ -1,11 +1,17 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { ChevronDown, ChevronUp, Eye, ThumbsUp, MessageSquare, Play, Users, Clock } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Area, AreaChart } from 'recharts';
+import { ChevronDown, ChevronUp, Eye, ThumbsUp, MessageSquare, Play, Users, Clock, TrendingUp } from 'lucide-react';
 import { api } from '@/trpc/react';
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 const YoutubeAnalyticsDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -133,6 +139,24 @@ const YoutubeAnalyticsDashboard = () => {
     lost: Number(row[7] || 0),
     net: Number(row[6] || 0) - Number(row[7] || 0),
   })) || [];
+
+  // Prepare data for the stacked area chart
+  const areaChartData = analyticsData?.rows?.map((row) => ({
+    day: row[0],
+    views: Number(row[1] || 0),
+    estimatedMinutesWatched: Number(row[2] || 0),
+  })) || [];
+
+  const areaChartConfig = {
+    views: {
+      label: "Views",
+      color: "hsl(var(--chart-1))",
+    },
+    estimatedMinutesWatched: {
+      label: "Minutes Watched",
+      color: "hsl(var(--chart-2))",
+    },
+  } satisfies ChartConfig;
   
   return (
     <div className="w-full px-4 py-6">
@@ -196,120 +220,6 @@ const YoutubeAnalyticsDashboard = () => {
               </CardContent>
             </Card>
           </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Views Over Time (Last 30 Days)</CardTitle>
-              </CardHeader>
-              <CardContent className="h-64">
-                {viewsChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={viewsChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="views" stroke="#3b82f6" activeDot={{ r: 8 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-gray-500">No analytics data available</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Subscribers (Last 30 Days)</CardTitle>
-              </CardHeader>
-              <CardContent className="h-64">
-                {subscribersChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={subscribersChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="gained" fill="#4ade80" name="Gained" />
-                      <Bar dataKey="lost" fill="#f87171" name="Lost" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-gray-500">No analytics data available</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Videos</CardTitle>
-              <CardDescription>Your best performing videos by views</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr>
-                      <th className="text-left py-2">Title</th>
-                      <th className="text-right py-2">Views</th>
-                      <th className="text-right py-2">Likes</th>
-                      <th className="text-right py-2">Comments</th>
-                      <th className="text-right py-2">Published</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {videos.slice(0, 5)
-                      .sort((a, b) => {
-                        const aViews = parseInt(a.youtubeDetails?.statistics?.viewCount || '0');
-                        const bViews = parseInt(b.youtubeDetails?.statistics?.viewCount || '0');
-                        return bViews - aViews;
-                      })
-                      .map((video) => (
-                        <tr key={video.id} className="border-t">
-                          <td className="py-3">
-                            <div className="flex items-center">
-                              <div className="ml-2">
-                                <p className="font-medium">{video.title}</p>
-                                <p className="text-sm text-gray-500 truncate max-w-md">{video.description}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="text-right">
-                            <div className="flex items-center justify-end">
-                              <Eye className="h-4 w-4 mr-1 text-gray-500" />
-                              {formatNumber(video.youtubeDetails?.statistics?.viewCount || 0)}
-                            </div>
-                          </td>
-                          <td className="text-right">
-                            <div className="flex items-center justify-end">
-                              <ThumbsUp className="h-4 w-4 mr-1 text-gray-500" />
-                              {formatNumber(video.youtubeDetails?.statistics?.likeCount || 0)}
-                            </div>
-                          </td>
-                          <td className="text-right">
-                            <div className="flex items-center justify-end">
-                              <MessageSquare className="h-4 w-4 mr-1 text-gray-500" />
-                              {formatNumber(video.youtubeDetails?.statistics?.commentCount || 0)}
-                            </div>
-                          </td>
-                          <td className="text-right text-gray-500">
-                            {formatDate(video.createdAt)}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
         
         {/* Videos Tab */}
@@ -462,74 +372,62 @@ const YoutubeAnalyticsDashboard = () => {
                 )}
               </CardContent>
             </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Watch Time (Last 30 Days)</CardTitle>
-              </CardHeader>
-              <CardContent className="h-64">
-                {viewsChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={viewsChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="watchTime" stroke="#8b5cf6" name="Watch Time (hours)" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-gray-500">No watch time data available</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
-          
-          {analyticsData && analyticsData.rows && analyticsData.rows.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Daily Analytics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr>
-                        <th className="text-left py-2">Date</th>
-                        <th className="text-right py-2">Views</th>
-                        <th className="text-right py-2">Watch Time (mins)</th>
-                        <th className="text-right py-2">Avg Duration (secs)</th>
-                        <th className="text-right py-2">Likes</th>
-                        <th className="text-right py-2">Subscribers +/-</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {analyticsData.rows.map((row, index) => (
-                        <tr key={index} className="border-t">
-                          <td className="py-2">{row[0]}</td>
-                          <td className="text-right">{formatNumber(row[1] || 0)}</td>
-                          <td className="text-right">{formatNumber(row[2] || 0)}</td>
-                          <td className="text-right">{formatNumber(row[3] || 0)}</td>
-                          <td className="text-right">{formatNumber(row[4] || 0)}</td>
-                          <td className="text-right">
-                            <span className={Number(row[6]) - Number(row[7]) >= 0 ? 'text-green-600' : 'text-red-600'}>
-                              {Number(row[6]) - Number(row[7]) >= 0 ? '+' : ''}
-                              {Number(row[6]) - Number(row[7])}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
       </Tabs>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Views and Watch Time</CardTitle>
+          <CardDescription>
+            Stacked area chart showing views and estimated minutes watched over time
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={areaChartConfig}>
+            <AreaChart
+              data={areaChartData}
+              margin={{ left: 12, right: 12 }}
+            >
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="day"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={(value) => value.slice(0, 10)} // Format date
+              />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent indicator="dot" />}
+              />
+              <Area
+                dataKey="views"
+                type="natural"
+                fill="var(--color-views)"
+                fillOpacity={0.4}
+                stroke="var(--color-views)"
+                stackId="a"
+              />
+              <Area
+                dataKey="estimatedMinutesWatched"
+                type="natural"
+                fill="var(--color-estimatedMinutesWatched)"
+                fillOpacity={0.4}
+                stroke="var(--color-estimatedMinutesWatched)"
+                stackId="a"
+              />
+            </AreaChart>
+          </ChartContainer>
+        </CardContent>
+        <CardFooter>
+          <div className="flex w-full items-start gap-2 text-sm">
+            <div className="grid gap-2">
+              
+            </div>
+          </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 };
