@@ -52,10 +52,10 @@ export default function YouTubeConnector() {
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch authentication status and URL
-  const authStatusQuery = api.youtube.checkAuthentication.useQuery(undefined, {
-    refetchOnWindowFocus: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
+const authStatusQuery = api.youtube.checkAuthentication.useQuery(undefined, {
+  refetchOnWindowFocus: false,
+  staleTime: 1000 * 60 * 5, // 5 minutes
+});
   
   const authUrlQuery = api.youtube.getAuthUrl.useQuery(undefined, {
     refetchOnWindowFocus: false,
