@@ -1,4 +1,4 @@
-import {  NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { cookies, headers } from "next/headers";
 import { db } from "@/server/db";
@@ -15,14 +15,14 @@ export async function GET(request: NextRequest) {
   // Handle errors from Twitter
   if (error) {
     return NextResponse.redirect(
-      new URL(`/auth/error?message=${encodeURIComponent(error)}`, request.url)
+      new URL(`/auth/error?message=${encodeURIComponent(error)}`, request.url),
     );
   }
 
   // Validate required parameters
   if (!code || !state) {
     return NextResponse.redirect(
-      new URL("/auth/error?message=Missing auth parameters", request.url)
+      new URL("/auth/error?message=Missing auth parameters", request.url),
     );
   }
 
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
   if (!savedState || !codeVerifier || state !== savedState) {
     return NextResponse.redirect(
-      new URL("/auth/error?message=Invalid state", request.url)
+      new URL("/auth/error?message=Invalid state", request.url),
     );
   }
 
@@ -43,26 +43,25 @@ export async function GET(request: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": `Basic ${Buffer.from(
-          `${process.env.TWITTER_CLIENT_ID}:${process.env.TWITTER_CLIENT_SECRET}`
+        Authorization: `Basic ${Buffer.from(
+          `${process.env.TWITTER_CLIENT_ID}:${process.env.TWITTER_CLIENT_SECRET}`,
         ).toString("base64")}`,
       },
       body: new URLSearchParams({
         grant_type: "authorization_code",
         code,
-        redirect_uri: `http://localhost:3000/api/auth/twitter/callback`,
+        redirect_uri: `http://localhost:3000/onboarding`,
         code_verifier: codeVerifier,
         client_id: process.env.TWITTER_CLIENT_ID!,
       }),
     });
 
     const session = await auth.api.getSession({
-      headers: await headers() // you need to pass the headers object.
-    })
+      headers: await headers(), // you need to pass the headers object.
+    });
     const userId = session?.user?.id;
-    
 
-    const tokens = await tokenResponse.json() as {
+    const tokens = (await tokenResponse.json()) as {
       access_token: string;
       refresh_token?: string;
       expires_in?: number;
@@ -75,12 +74,11 @@ export async function GET(request: NextRequest) {
 
     // Store tokens in session (adapt to your auth system)
     const response = NextResponse.redirect(new URL("/", request.url));
-    
+
     // Set cookies (or use your session management)
 
-    
-// Store tokens in database using Drizzle ORM
-    
+    // Store tokens in database using Drizzle ORM
+
     await db.insert(twitterTokens).values({
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token!,
@@ -93,12 +91,13 @@ export async function GET(request: NextRequest) {
     response.cookies.delete("twitter_auth_state");
 
     return response;
-
   } catch (err) {
     console.error("Twitter callback error:", err);
     return NextResponse.redirect(
-      new URL(`/auth/error?message=${encodeURIComponent(err instanceof Error ? err.message : "Authentication failed")}`, 
-      request.url)
+      new URL(
+        `/auth/error?message=${encodeURIComponent(err instanceof Error ? err.message : "Authentication failed")}`,
+        request.url,
+      ),
     );
   }
 }
