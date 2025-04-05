@@ -13,7 +13,7 @@ import {
   NavigationMenuTrigger 
 } from "@/components/ui/navigation-menumod";
 import { Button } from "@/components/ui/button";
-import YouTubeComponent from '@/components/ui/YoutubeForm';
+import YouTubeComponent from '@/features/YoutubeForm';
 
 enum ActiveTab {
   CREATE_POST = 'create_post',

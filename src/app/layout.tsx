@@ -4,6 +4,7 @@ import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "@/trpc/react";
+import { MainNav } from "@/features/Navbar";
 
 export const metadata: Metadata = {
   title: "Bingo",

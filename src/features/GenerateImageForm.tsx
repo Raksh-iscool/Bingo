@@ -1,42 +1,50 @@
+
 "use client"
 import { api } from '@/trpc/react';
-import React, { useState } from 'react';
+import React from 'react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import Image from "next/image"; // Import next/image
-
-const GenerateImageForm = () => {
-  const [platform, setPlatform] = useState<"twitter" | "linkedin" | "facebook" | "instagram">("instagram");
-  const [prompt, setPrompt] = useState("");
-  const [size, setSize] = useState<"square" | "portrait" | "landscape" | "twitter">("square");
-  const [style, setStyle] = useState("");
-  const [contentId, setContentId] = useState<number | null>(null); // Add contentId state
-  const [result, setResult] = useState<{
-    imageBase64: string;
-    mimeType: string;
-    altText: string;
-  } | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+import Image from "next/image";
+import useFormStore, { type Platform, type ImageSize } from '@/app/store/FormStore';
+const GenerateImageForm: React.FC = () => {
+  const {
+    image,
+    isLoading,
+    error,
+    setImagePlatform,
+    setPrompt,
+    setSize,
+    setStyle,
+    setContentId, 
+    setImageResult,
+    setLoading,
+    setError
+  } = useFormStore();
 
   const generateImage = api.generateImagePost.useMutation({
     onSuccess: (data) => {
-      setResult(data);
-      setIsLoading(false);
+      setImageResult(data);
+      setLoading(false);
       setError("");
     },
     onError: (error) => {
       setError(error.message);
-      setIsLoading(false);
+      setLoading(false);
     }
   });
  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setLoading(true);
     setError("");
-    generateImage.mutate({ platform, prompt, size, style, contentId: contentId ?? undefined }); // Include contentId
+    generateImage.mutate({ 
+      platform: image.platform, 
+      prompt: image.prompt, 
+      size: image.size, 
+      style: image.style, 
+      contentId: image.contentId ?? undefined 
+    });
   };
 
   return (
@@ -47,7 +55,10 @@ const GenerateImageForm = () => {
           <form className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Platform</label>
-              <Select value={platform} onValueChange={(value: "twitter" | "linkedin" | "facebook" | "instagram") => setPlatform(value)}>
+              <Select 
+                value={image.platform} 
+                onValueChange={(value: Platform) => setImagePlatform(value)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select Platform" />
                 </SelectTrigger>
@@ -63,7 +74,7 @@ const GenerateImageForm = () => {
             <div>
               <label className="block text-sm font-medium mb-1">Image Description</label>
               <textarea 
-                value={prompt} 
+                value={image.prompt} 
                 onChange={(e) => setPrompt(e.target.value)} 
                 className="w-full p-2 border rounded h-24"
                 placeholder="Create an image showing..."
@@ -73,7 +84,10 @@ const GenerateImageForm = () => {
 
             <div>
               <label className="block text-sm font-medium mb-1">Image Size</label>
-              <Select value={size} onValueChange={(value: "square" | "portrait" | "landscape" | "twitter") => setSize(value)}>
+              <Select 
+                value={image.size} 
+                onValueChange={(value: ImageSize) => setSize(value)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select Size" />
                 </SelectTrigger>
@@ -90,7 +104,7 @@ const GenerateImageForm = () => {
               <label className="block text-sm font-medium mb-1">Style (Optional)</label>
               <input 
                 type="text"
-                value={style} 
+                value={image.style} 
                 onChange={(e) => setStyle(e.target.value)} 
                 className="w-full p-2 border rounded"
                 placeholder="e.g., Minimalist, Colorful, Corporate, etc."
@@ -101,7 +115,7 @@ const GenerateImageForm = () => {
               <label className="block text-sm font-medium mb-1">Content ID (Optional)</label>
               <input 
                 type="number"
-                value={contentId ?? ""}
+                value={image.contentId ?? ""}
                 onChange={(e) => setContentId(e.target.value ? parseInt(e.target.value) : null)}
                 className="w-full p-2 border rounded"
                 placeholder="Enter content ID if applicable"
@@ -125,22 +139,22 @@ const GenerateImageForm = () => {
       <ResizablePanel className="w-full md:w-1/2">
         <div className="p-4 bg-gray-100 rounded-lg shadow-md">
           <h3 className="text-lg font-medium mb-2">
-            {isLoading ? "Generating..." : result ? "Generated" : "Generated Image:"}
+            {isLoading ? "Generating..." : image.result ? "Generated" : "Generated Image:"}
           </h3>
           {isLoading ? (
             <div className="animate-pulse">
               <div className="h-64 bg-gray-300 rounded"></div>
             </div>
-          ) : result ? (
+          ) : image.result ? (
             <>
               <Image 
-                src={`data:${result.mimeType};base64,${result.imageBase64}`} 
-                alt={result.altText}
+                src={`data:${image.result.mimeType};base64,${image.result.imageBase64}`} 
+                alt={image.result.altText}
                 width={500}
                 height={500}
                 className="max-w-full h-auto rounded"
               />
-              <p className="mt-2 text-sm text-gray-600">Alt text: {result.altText}</p>
+              <p className="mt-2 text-sm text-gray-600">Alt text: {image.result.altText}</p>
             </>
           ) : (
             <p className="text-sm text-gray-600">Output will appear here...</p>
@@ -152,3 +166,4 @@ const GenerateImageForm = () => {
 };
 
 export default GenerateImageForm;
+

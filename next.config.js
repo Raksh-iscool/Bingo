@@ -7,7 +7,7 @@ import "./src/env.js";
 /** @type {import("next").NextConfig} */
 const config = {
     images: {
-        domains: ['example.com','static.toiimg.com'],
+        domains: ['example.com','static.toiimg.com','img.icons8.com'],
     },
 };
 
