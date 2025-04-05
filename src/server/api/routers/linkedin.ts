@@ -49,8 +49,8 @@ export const linkedinRouter = createTRPCRouter({
               "LinkedIn-Version": "202304",
             }
           });
-          const userData = await userResponse.json();
-        const linkedinUserId = userData.sub;
+          const userData = await userResponse.json() as { sub: string };
+          const linkedinUserId = userData.sub;
 
         // Determine if posting as user or organization
         let author = `urn:li:person:${linkedinUserId}`;
