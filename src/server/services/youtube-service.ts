@@ -227,9 +227,9 @@ export async function uploadVideo({
     
 
     // Upload thumbnail if provided
-    if (thumbnailBuffer) {
-      await uploadThumbnail(videoId, thumbnailBuffer, userId);
-    }
+    // if (thumbnailBuffer) {
+    //   await uploadThumbnail(videoId, thumbnailBuffer, userId);
+    // }
 
     
     return {

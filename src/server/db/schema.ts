@@ -165,7 +165,7 @@ export const socialAccounts = createTable(
 export const youtubeTokens = createTable("youtube_token", (d) => ({
   id: d.serial().primaryKey(),
   accessToken: d.text().notNull(),
-  refreshToken: d.text().notNull(),
+  refreshToken: d.text(),
   expiryDate: d.timestamp().notNull(),
   userId: d.varchar({ length: 256 }).notNull(), // Link to your user system
   createdAt: d
