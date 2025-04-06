@@ -22,7 +22,8 @@ const CreatePostForm = ({ onPostGenerated }: {
     setMaxLength,
     setPostResult,
     setLoading,
-    setError,ing,
+    setError,
+    isLoading,
     error,
   } = useFormStore();
 
@@ -61,9 +62,23 @@ const CreatePostForm = ({ onPostGenerated }: {
         <div className="p-4 bg-white rounded-lg shadow-md">
           <h2 className="text-xl font-bold mb-4">Create Social Media Post</h2>
           <form className="space-y-4" onSubmit={handleSubmit}>
-            <div>
-
-            </div>
+            {/* <div>
+              <label className="block text-sm font-medium mb-1">Platform</label>
+              <Select
+                value={post.platform}
+                onValueChange={(value: Platform) => setPostPlatform(value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Platform" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="twitter">Twitter</SelectItem>
+                  <SelectItem value="linkedin">LinkedIn</SelectItem>
+                  <SelectItem value="facebook">Facebook</SelectItem>
+                  <SelectItem value="instagram">Instagram</SelectItem>
+                </SelectContent>
+              </Select>
+            </div> */}
             <div>
               <label className="block text-sm font-medium mb-1">Prompt</label>
               <textarea
@@ -182,7 +197,5 @@ const CreatePostForm = ({ onPostGenerated }: {
     </ResizablePanelGroup>
   );
 };
- 
+
 export default CreatePostForm;
-
-
