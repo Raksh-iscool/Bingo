@@ -332,3 +332,29 @@ export const scheduledTweets = createTable(
     index("scheduled_tweet_scheduled_for_idx").on(t.scheduledFor),
   ],
 );
+
+export const scheduledLinkedinPosts = createTable(
+  "scheduled_linkedin_post",
+  (d) => ({
+    id: d.serial().primaryKey(),
+    userId: d.varchar({ length: 256 }).notNull(),
+    content: d.text().notNull(),
+    title: d.varchar({ length: 300 }),
+    imageUrl: d.text(), // Optional image for the post
+    scheduleId: d.varchar({ length: 256 }), // QStash schedule ID
+    scheduledFor: d.timestamp({ withTimezone: true }).notNull(),
+    status: d.varchar({ length: 20 }).default("scheduled").notNull(), // scheduled, processing, completed, failed
+    linkedinPostId: d.varchar({ length: 100 }), // Will be filled after successful post
+    postResult: d.json(), // Store the result of the LinkedIn post operation
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+  }),
+  (t) => [
+    index("scheduled_linkedin_post_user_id_idx").on(t.userId),
+    index("scheduled_linkedin_post_status_idx").on(t.status),
+    index("scheduled_linkedin_post_scheduled_for_idx").on(t.scheduledFor),
+  ],
+);

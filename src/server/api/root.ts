@@ -6,7 +6,8 @@ import { twitterRouter } from "@/server/api/routers/twitter";
 import { youtubeRouter } from "@/server/api/routers/youtube-api";
 import { youtubeScheduleRouter } from "@/server/api/routers/youtube-schedule";
 import { twitterScheduleRouter } from "@/server/api/routers/twitter-schedule";
-import { linkedinRouter } from "./routers/linkedin";
+import { linkedinRouter } from "@/server/api/routers/linkedin";
+import { linkedinScheduleRouter } from "@/server/api/routers/linkedin-schedule";
 /**
  * This is the primary router for your server.
  *
@@ -20,7 +21,8 @@ export const appRouter = createTRPCRouter({
     twitter: twitterRouter,
     youtubeSchedule: youtubeScheduleRouter,
     twitterSchedule: twitterScheduleRouter,
-    linkedin: linkedinRouter
+    linkedin: linkedinRouter,
+    linkedinSchedule: linkedinScheduleRouter,
 });
 
 // export type definition of API

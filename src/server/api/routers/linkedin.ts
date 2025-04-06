@@ -1,10 +1,8 @@
-import { cookies } from "next/headers";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { linkedinTokens } from "@/server/db/schema";
 import { db } from "@/server/db";
-import { log } from "util";
 
 export const linkedinRouter = createTRPCRouter({
   createPost: protectedProcedure

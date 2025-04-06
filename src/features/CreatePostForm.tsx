@@ -86,7 +86,7 @@ const CreatePostForm = ({ onPostGenerated }: { onPostGenerated: (content: string
                 required
               />
             </div>
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium mb-1">AI Model</label>
               <Select
                 value={post.model}
@@ -100,7 +100,7 @@ const CreatePostForm = ({ onPostGenerated }: { onPostGenerated: (content: string
                   <SelectItem value="deepseek">DeepSeek</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
             <div>
               <label className="block text-sm font-medium mb-1">Tone</label>
               <Select
