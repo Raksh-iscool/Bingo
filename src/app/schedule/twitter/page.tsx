@@ -57,7 +57,7 @@ export default function ScheduleTweetForm() {
       setIsSubmitting(true);
       await scheduleTweetMutation.mutateAsync({
         text: tweetText,
-        scheduledFor: scheduledDate,
+        scheduledFor: scheduledDate.toISOString(),
       });
     } catch (error) {
       // Error is handled in the mutation callbacks

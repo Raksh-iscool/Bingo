@@ -19,7 +19,6 @@ export default function CreateLinkedInPost() {
       setIsPosting(false);
     },
   });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsPosting(true);

@@ -10,11 +10,17 @@ const cardData = [
     color: "bg-blue-400",
     lightColor: "bg-blue-200"
   },
+  { 
+    platformName: "LinkedIn",
+    imageUrl: "https://img.icons8.com/?size=100&id=447&format=png&color=000000",
+    color: "bg-blue-700",
+    lightColor: "bg-blue-300"
+  },
   // Add more platforms as needed
-];
+]; 
 
 const ChoosePlatform = () => {
-  const { post, image, setSelectedPlatforms } = useFormStore(); // Remove YouTube data
+  const { post, image, setSelectedPlatforms } = useFormStore(); // Use setSelectedPlatforms from FormStore
   const [selectedPlatforms, setLocalSelectedPlatforms] = useState<string[]>([]);
   const router = useRouter();
 
@@ -36,7 +42,7 @@ const ChoosePlatform = () => {
  
   const handlePost = () => {
     setSelectedPlatforms(selectedPlatforms); // Store selected platforms in FormStore
-    router.push('/post');
+    router.push('/post'); // Navigate to /post without passing platforms
   };
 
   const isAllPlatformsDisabled = !post.result && !image.result; // Disable all platforms if nothing to post

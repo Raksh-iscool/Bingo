@@ -1,4 +1,4 @@
-// store/formStore.ts
+// Post form state
 import { create } from 'zustand';
 
 export type Platform = "twitter" | "linkedin" | "facebook" | "instagram";
@@ -8,6 +8,7 @@ export type ImageSize = "square" | "portrait" | "landscape" | "twitter";
 
 // Post form state
 interface PostFormState {
+  selectedPlatforms: Platform[];
   platform: Platform;
   topic: string;
   model: Model;
@@ -99,6 +100,7 @@ const useFormStore = create<FormStoreState>((set) => ({
   
   // Post form initial state
   post: {
+    selectedPlatforms: [],
     platform: "twitter",
     topic: "",
     model: "gemini",
