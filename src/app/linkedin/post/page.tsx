@@ -59,7 +59,7 @@ export default function CreateLinkedInPost() {
               {isPosting ? 'Posting...' : 'Post to LinkedIn'}
             </button>
           </div>
-        </form>
+        </form> 
 
         {error && (
           <div className="text-red-500 text-sm mt-2">

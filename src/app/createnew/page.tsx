@@ -70,9 +70,7 @@ const Page: React.FC = () => {
           </TabsList>
           {showPostForm && (
             <TabsContent value="post">
-              <CreatePostForm onPostGenerated={function (content: string): void {
-                throw new Error('Function not implemented.');
-              } } />
+              <CreatePostForm />
             </TabsContent>
           )}
           {showImageForm && (

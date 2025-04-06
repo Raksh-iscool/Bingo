@@ -62,9 +62,7 @@ export default function ChatPage() {
       </NavigationMenu>
       
       <div className="bg-gray-50 p-6 rounded-lg shadow-sm">
-        {activeTab === ActiveTab.CREATE_POST && <CreatePostForm onPostGenerated={function (content: string): void {
-          throw new Error('Function not implemented.');
-        } } />}
+        {activeTab === ActiveTab.CREATE_POST && <CreatePostForm />}
         {activeTab === ActiveTab.UPDATE_POST && <UpdatePostForm initialContent={''} />}
         {activeTab === ActiveTab.GENERATE_IMAGE && <GenerateImageForm />}
         {activeTab === ActiveTab.YOUTUBE && <YouTubeComponent/>}

@@ -1,3 +1,4 @@
+
 "use client";
 import { api } from '@/trpc/react';
 import React from 'react';
@@ -6,7 +7,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Button } from "@/components/ui/button";
 import useFormStore, { type Platform, type Model, type Tone } from '@/app/store/FormStore';
 
-const CreatePostForm = ({ onPostGenerated }: { onPostGenerated: (content: string) => void }) => {
+const CreatePostForm = () => {
   const {
     post,
     setPostPlatform,
@@ -27,7 +28,6 @@ const CreatePostForm = ({ onPostGenerated }: { onPostGenerated: (content: string
   const createPost = api.createPost.useMutation({
     onSuccess: (data) => {
       setPostResult(data.content);
-      onPostGenerated(data.content); // Pass generated content to the parent
       setLoading(false);
       setError("");
     },
@@ -59,7 +59,7 @@ const CreatePostForm = ({ onPostGenerated }: { onPostGenerated: (content: string
         <div className="p-4 bg-white rounded-lg shadow-md">
           <h2 className="text-xl font-bold mb-4">Create Social Media Post</h2>
           <form className="space-y-4" onSubmit={handleSubmit}>
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium mb-1">Platform</label>
               <Select
                 value={post.platform}
@@ -75,7 +75,7 @@ const CreatePostForm = ({ onPostGenerated }: { onPostGenerated: (content: string
                   <SelectItem value="instagram">Instagram</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
             <div>
               <label className="block text-sm font-medium mb-1">Prompt</label>
               <textarea
@@ -194,7 +194,5 @@ const CreatePostForm = ({ onPostGenerated }: { onPostGenerated: (content: string
     </ResizablePanelGroup>
   );
 };
- 
+
 export default CreatePostForm;
-
-
