@@ -94,7 +94,7 @@ interface FormStoreState extends UIState {
 const useFormStore = create<FormStoreState>((set) => ({
   // UI initial state
   showImageForm: false,
-  showPostForm: false,
+  showPostForm: true,
   isLoading: false,
   error: "",
   

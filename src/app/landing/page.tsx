@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { authClient } from "@/lib/auth-client";
 
 // Predefined positions and animations to avoid hydration mismatch
 const FLOATING_DOTS = [
@@ -32,6 +33,10 @@ const Landing = () => {
     const [images, setImages] = useState<Array<{ x: number; y: number; src: string; visible: boolean; rotation: number }>>([]);
     const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
     const router = useRouter();
+
+    const { 
+        data: session
+    } = authClient.useSession() 
 
     // Memoize the getImageDimensions function to prevent recreating on every render
     const getImageDimensions = useCallback(() => {
@@ -178,7 +183,7 @@ const Landing = () => {
                     Schedule <span className="font-bold text-purple-300">and</span> automate your content
                 </p>
                 <button
-                    onClick={() => router.push("/login")}
+                    onClick={() => session?.user?.id ? router.push("/createnew") : router.push("/login")}
                     className="mt-12 px-8 py-3 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white text-lg font-medium hover:bg-white/20 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-purple-500/20"
                 >
                     Get Started

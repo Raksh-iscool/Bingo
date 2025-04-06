@@ -14,9 +14,16 @@ export default function ScheduleLinkedInPost() {
   const [content, setContent] = React.useState("");
   const [title, setTitle] = React.useState("");
   const [imageUrl, setImageUrl] = React.useState("");
-  const [scheduledDate, setScheduledDate] = React.useState<Date | undefined>(
-    new Date(Date.now() + 24 * 60 * 60 * 1000) // Default to 24 hours from now
-  );
+  
+  // Initialize with a valid Date object for tomorrow
+  const [scheduledDate, setScheduledDate] = React.useState<Date>(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Setting to noon to avoid any timezone issues
+    tomorrow.setHours(12, 0, 0, 0);
+    return tomorrow;
+  });
+  
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const scheduleMutation = api.linkedinSchedule.schedulePost.useMutation({
@@ -34,7 +41,13 @@ export default function ScheduleLinkedInPost() {
     setContent("");
     setTitle("");
     setImageUrl("");
-    setScheduledDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
+    
+    // Reset to tomorrow at noon
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(12, 0, 0, 0);
+    setScheduledDate(tomorrow);
+    
     setIsSubmitting(false);
   };
 
@@ -46,8 +59,14 @@ export default function ScheduleLinkedInPost() {
       return;
     }
     
-    if (!scheduledDate) {
-      toast.error("Please select a date and time to schedule");
+    if (!scheduledDate || isNaN(scheduledDate.getTime())) {
+      toast.error("Please select a valid date and time to schedule");
+      return;
+    }
+
+    // Ensure the scheduled date is in the future
+    if (scheduledDate < new Date()) {
+      toast.error("Please select a future date and time");
       return;
     }
     
@@ -111,7 +130,12 @@ export default function ScheduleLinkedInPost() {
             <Label>Schedule Date and Time</Label>
             <DateTimePicker
               date={scheduledDate}
-              setDate={setScheduledDate}
+              setDate={(date) => {
+                // Only update if we have a valid date
+                if (date) {
+                  setScheduledDate(date);
+                }
+              }}
               disabled={isSubmitting}
             />
           </div>

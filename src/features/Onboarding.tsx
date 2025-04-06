@@ -189,8 +189,6 @@ const Onboarding = () => {
             </div>
           ) : selectedPlatform === "LinkedIn" ? (
             <div className="flex flex-col items-center py-4">
-              <div>Checking connection status...</div>
-              <div className="text-green-600 font-semibold">Connected to LinkedIn</div>
               <button
                 onClick={handleLinkedinConnect}
                 className="rounded-full bg-[#1DA1F2] px-6 py-3 font-semibold text-white hover:bg-[#1a8cd8] disabled:opacity-50"

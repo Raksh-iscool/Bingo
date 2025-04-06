@@ -6,7 +6,10 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Button } from "@/components/ui/button";
 import useFormStore, { type Platform, type Model, type Tone } from '@/app/store/FormStore';
 
-const CreatePostForm = ({ onPostGenerated }: { onPostGenerated: (content: string) => void }) => {
+// Update the type definition
+const CreatePostForm = ({ onPostGenerated }: { 
+  onPostGenerated: (content: Array<{ platform: string; content: string; contentId: number }>) => void 
+}) => {
   const {
     post,
     setPostPlatform,
@@ -26,8 +29,8 @@ const CreatePostForm = ({ onPostGenerated }: { onPostGenerated: (content: string
 
   const createPost = api.createPost.useMutation({
     onSuccess: (data) => {
-      setPostResult(data.content);
-      onPostGenerated(data.content); // Pass generated content to the parent
+      setPostResult(data.contents[0]?.content ?? ''); // Set first content to result
+      onPostGenerated(data.contents); // Pass the entire contents array
       setLoading(false);
       setError("");
     },
@@ -60,21 +63,7 @@ const CreatePostForm = ({ onPostGenerated }: { onPostGenerated: (content: string
           <h2 className="text-xl font-bold mb-4">Create Social Media Post</h2>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-sm font-medium mb-1">Platform</label>
-              <Select
-                value={post.platform}
-                onValueChange={(value: Platform) => setPostPlatform(value)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select Platform" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="twitter">Twitter</SelectItem>
-                  <SelectItem value="linkedin">LinkedIn</SelectItem>
-                  <SelectItem value="facebook">Facebook</SelectItem>
-                  <SelectItem value="instagram">Instagram</SelectItem>
-                </SelectContent>
-              </Select>
+
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Prompt</label>
