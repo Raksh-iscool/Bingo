@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import useFormStore from '../store/FormStore';
 import { api } from '@/trpc/react'; // Import TRPC API
+import { schedulePost } from "@/features/SchedulePost";
 
 const cardData = [
   {
@@ -27,6 +28,9 @@ const PostPage = () => {
   const [linkedInError, setLinkedInError] = useState<string | null>(null); // LinkedIn error state
   const [isPostingToTwitter, setIsPostingToTwitter] = useState(false); // Twitter posting state
   const [twitterError, setTwitterError] = useState<string | null>(null); // Twitter error state
+  const [scheduledFor, setScheduledFor] = useState<string>(""); // State for scheduling time
+  const [scheduleError, setScheduleError] = useState<string | null>(null); // Error state for scheduling
+  const [scheduleSuccess, setScheduleSuccess] = useState<string | null>(null); // Success state for scheduling
   const router = useRouter();
 
   const createLinkedInPost = api.linkedin.createPost.useMutation({
@@ -53,6 +57,8 @@ const PostPage = () => {
     },
   });
 
+  const scheduleTweetMutation = api.twitterSchedule.scheduleTweet.useMutation();
+
   useEffect(() => {
     if (post.topic || post.result) {
       console.log("Post Data:", post);
@@ -75,7 +81,7 @@ const PostPage = () => {
     );
   };
 
-  const handlePost = () => {
+  const handlePost = async () => {
     const postData = {
       selectedPlatforms,
       postContent: post.result,
@@ -86,7 +92,7 @@ const PostPage = () => {
     console.log("Posting Data:", postData);
 
     // Iterate through selected platforms and call respective APIs
-    selectedPlatforms.forEach((platform) => {
+    for (const platform of selectedPlatforms) {
       if (platform === "LinkedIn") {
         setIsPostingToLinkedIn(true);
         setLinkedInError(null);
@@ -102,8 +108,17 @@ const PostPage = () => {
           text: post.result,
         });
       }
-      // Add more platform-specific API calls as needed
-    });
+    }
+
+    // Schedule post for Twitter if a schedule time is provided
+    if (scheduledFor) {
+      const scheduleResult = await schedulePost(post.result, scheduledFor, scheduleTweetMutation);
+      if (scheduleResult.success) {
+        setScheduleSuccess(scheduleResult.message);
+      } else {
+        setScheduleError(scheduleResult.message);
+      }
+    }
 
     router.push('/post');
   };
@@ -165,6 +180,17 @@ const PostPage = () => {
           Selected Platforms: {selectedPlatforms.length > 0 ? selectedPlatforms.join(", ") : "None"}
         </p>
       </div>
+      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Schedule Post:</h2>
+        <input
+          type="datetime-local"
+          value={scheduledFor}
+          onChange={(e) => setScheduledFor(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded"
+        />
+        {scheduleError && <p className="text-red-500 mt-2">{scheduleError}</p>}
+        {scheduleSuccess && <p className="text-green-500 mt-2">{scheduleSuccess}</p>}
+      </div>
       <div className="text-center mt-8">
         <button
           onClick={handlePost}
@@ -173,11 +199,35 @@ const PostPage = () => {
         >
           {(isPostingToLinkedIn || isPostingToTwitter) ? "Posting..." : "Post"}
         </button>
+        <button
+          onClick={async () => {
+            if (scheduledFor) {
+              const scheduleResult = await schedulePost(post.result, scheduledFor, scheduleTweetMutation);
+              if (scheduleResult.success) {
+                setScheduleSuccess(scheduleResult.message);
+              } else {
+                setScheduleError(scheduleResult.message);
+              }
+            } else {
+              setScheduleError("Please select a valid date/time to schedule.");
+            }
+          }}
+          className="ml-4 px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700"
+          disabled={!scheduledFor}
+        >
+          Schedule
+        </button>
         {linkedInError && (
           <p className="text-red-500 mt-2">{linkedInError}</p>
         )}
         {twitterError && (
           <p className="text-red-500 mt-2">{twitterError}</p>
+        )}
+        {scheduleError && (
+          <p className="text-red-500 mt-2">{scheduleError}</p>
+        )}
+        {scheduleSuccess && (
+          <p className="text-green-500 mt-2">{scheduleSuccess}</p>
         )}
       </div>
     </div>

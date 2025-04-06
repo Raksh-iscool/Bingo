@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       body: new URLSearchParams({
         grant_type: "authorization_code",
         code,
-        redirect_uri: `http://localhost:3000/onboarding`,
+        redirect_uri: `http://localhost:3000/api/auth/twitter/callback`,
         code_verifier: codeVerifier,
         client_id: process.env.TWITTER_CLIENT_ID!,
       }),
