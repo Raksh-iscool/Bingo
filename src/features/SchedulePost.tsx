@@ -2,6 +2,40 @@
 import React, { useState } from "react";
 import { api } from "@/trpc/react";
 
+export const schedulePost = async (
+    text: string,
+    scheduledFor: string,
+    scheduleTweetMutation: ReturnType<typeof api.twitterSchedule.scheduleTweet.useMutation>
+): Promise<{ success: boolean; message: string }> => {
+    if (!text.trim() || !scheduledFor) {
+        return { success: false, message: "Please provide both text and a valid date/time." };
+    }
+
+    const scheduledDate = new Date(scheduledFor);
+    if (isNaN(scheduledDate.getTime())) {
+        return { success: false, message: "Invalid date/time format." };
+    }
+
+    try {
+        const result = await scheduleTweetMutation.mutateAsync({
+            text,
+            scheduledFor: scheduledDate.toISOString(),
+        });
+
+        if (result.success) {
+            return { success: true, message: "Post scheduled successfully!" };
+        } else {
+            return { success: false, message: "Failed to schedule post." };
+        }
+    } catch (err) {
+        if (err instanceof Error) {
+            return { success: false, message: err.message ?? "Failed to schedule post." };
+        } else {
+            return { success: false, message: "Failed to schedule post." };
+        }
+    }
+};
+
 const ScheduleTweetPost: React.FC = () => {
     const [text, setText] = useState("");
     const [scheduledFor, setScheduledFor] = useState("");
@@ -15,34 +49,14 @@ const ScheduleTweetPost: React.FC = () => {
         setError(null);
         setSuccessMessage(null);
 
-        if (!text.trim() || !scheduledFor) {
-            setError("Please provide both text and a valid date/time.");
-            return;
-        }
+        const result = await schedulePost(text, scheduledFor, scheduleTweetMutation);
 
-        try {
-            const scheduledDate = new Date(scheduledFor);
-            if (isNaN(scheduledDate.getTime())) {
-                setError("Invalid date/time format.");
-                return;
-            }
-
-            const result = await scheduleTweetMutation.mutateAsync({
-                text,
-                scheduledFor: scheduledDate.toISOString(),
-            });
-
-            if (result.success) {
-                setSuccessMessage("Post scheduled successfully!");
-                setText("");
-                setScheduledFor("");
-            }
-        } catch (err) {
-            if (err instanceof Error) {
-                setError(err.message ?? "Failed to schedule post.");
-            } else {
-                setError("Failed to schedule post.");
-            }
+        if (result.success) {
+            setSuccessMessage(result.message);
+            setText("");
+            setScheduledFor("");
+        } else {
+            setError(result.message);
         }
     };
 
