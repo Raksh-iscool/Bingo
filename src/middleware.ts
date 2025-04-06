@@ -11,5 +11,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard","/twitter","/onboarding"],
+  matcher: ["/dashboard","/youtube","/twitter","/createnew","/post","/chooseplatform","/onboarding"],
 };

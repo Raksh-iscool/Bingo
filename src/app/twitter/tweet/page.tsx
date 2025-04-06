@@ -31,7 +31,7 @@ export default function CreateTweetPage() {
     // Call the mutation function
     createTweet.mutate({ text: tweetContent });
   };
-
+ 
  
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-24">

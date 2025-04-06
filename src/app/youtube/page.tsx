@@ -265,7 +265,13 @@ const authStatusQuery = api.youtube.checkAuthentication.useQuery(undefined, {
                 Videos you&rsquo;ve uploaded through this integration
               </CardDescription>
             </div>
-            
+            <Button 
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => window.location.href = '/schedule/youtube'}
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Schedule Video
+            </Button>
             <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-red-600 hover:bg-red-700">

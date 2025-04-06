@@ -37,8 +37,12 @@ const ScheduleTweetPost: React.FC = () => {
                 setText("");
                 setScheduledFor("");
             }
-        } catch (err: any) {
-            setError(err.message || "Failed to schedule post.");
+        } catch (err) {
+            if (err instanceof Error) {
+                setError(err.message ?? "Failed to schedule post.");
+            } else {
+                setError("Failed to schedule post.");
+            }
         }
     };
 

@@ -1,15 +1,16 @@
-"use client";                                                                                            
+"use client";
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import useFormStore from '../store/FormStore';
+import { api } from '@/trpc/react'; // Import TRPC API
 
 const cardData = [
   {
-    platformName: "YouTube",
-    imageUrl: "https://img.icons8.com/?size=100&id=19318&format=png&color=000000",
-    color: "bg-red-600",
-    lightColor: "bg-red-300"
-  },
+    platformName: "LinkedIn",
+    imageUrl: "https://img.icons8.com/?size=100&id=447&format=png&color=000000",
+    color: "bg-blue-600",
+    lightColor: "bg-blue-300"
+  }, 
   {
     platformName: "Twitter",
     imageUrl: "https://img.icons8.com/?size=100&id=6Fsj3rv2DCmG&format=png&color=000000",
@@ -22,7 +23,35 @@ const cardData = [
 const PostPage = () => {
   const { post, image } = useFormStore();
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [isPostingToLinkedIn, setIsPostingToLinkedIn] = useState(false); // LinkedIn posting state
+  const [linkedInError, setLinkedInError] = useState<string | null>(null); // LinkedIn error state
+  const [isPostingToTwitter, setIsPostingToTwitter] = useState(false); // Twitter posting state
+  const [twitterError, setTwitterError] = useState<string | null>(null); // Twitter error state
   const router = useRouter();
+
+  const createLinkedInPost = api.linkedin.createPost.useMutation({
+    onSuccess: () => {
+      setIsPostingToLinkedIn(false);
+      setLinkedInError(null);
+      console.log("Posted to LinkedIn successfully.");
+    },
+    onError: (err) => {
+      setIsPostingToLinkedIn(false);
+      setLinkedInError(err.message);
+    },
+  });
+
+  const createTwitterPost = api.twitter.createTweet.useMutation({
+    onSuccess: () => {
+      setIsPostingToTwitter(false);
+      setTwitterError(null);
+      console.log("Posted to Twitter successfully.");
+    },
+    onError: (err) => {
+      setIsPostingToTwitter(false);
+      setTwitterError(err.message);
+    },
+  });
 
   useEffect(() => {
     if (post.topic || post.result) {
@@ -46,9 +75,6 @@ const PostPage = () => {
     );
   };
 
-  const isYouTubeDisabled = post.result && image.result;
-  const isOtherPlatformsDisabled = selectedPlatforms.includes("YouTube");
-
   const handlePost = () => {
     const postData = {
       selectedPlatforms,
@@ -58,6 +84,27 @@ const PostPage = () => {
       fullData: { post, image }
     };
     console.log("Posting Data:", postData);
+
+    // Iterate through selected platforms and call respective APIs
+    selectedPlatforms.forEach((platform) => {
+      if (platform === "LinkedIn") {
+        setIsPostingToLinkedIn(true);
+        setLinkedInError(null);
+        createLinkedInPost.mutate({
+          text: post.result,
+          visibility: "PUBLIC",
+        });
+      }
+      if (platform === "Twitter") {
+        setIsPostingToTwitter(true);
+        setTwitterError(null);
+        createTwitterPost.mutate({
+          text: post.result,
+        });
+      }
+      // Add more platform-specific API calls as needed
+    });
+
     router.push('/post');
   };
 
@@ -74,7 +121,7 @@ const PostPage = () => {
           <p className="text-gray-500 italic">No post content available.</p>
         )}
       </div>
-      <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+      {/* <div className="bg-white shadow-md rounded-lg p-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Hashtags:</h2>
         {post.topic ? (
           <p className="text-gray-700 text-lg bg-gray-100 p-4 rounded border border-gray-300">
@@ -83,7 +130,7 @@ const PostPage = () => {
         ) : (
           <p className="text-gray-500 italic">No hashtags available.</p>
         )}
-      </div>
+      </div> */}
       <div className="bg-white shadow-md rounded-lg p-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Image:</h2>
         {image.result ? (
@@ -106,18 +153,8 @@ const PostPage = () => {
                 selectedPlatforms.includes(platform.platformName)
                   ? platform.color
                   : platform.lightColor
-              } ${
-                (platform.platformName === "YouTube" && isYouTubeDisabled) ||
-                (platform.platformName !== "YouTube" && isOtherPlatformsDisabled)
-                  ? "opacity-50 cursor-not-allowed"
-                  : "opacity-100"
               }`}
-              onClick={() =>
-                !(
-                  (platform.platformName === "YouTube" && isYouTubeDisabled) ||
-                  (platform.platformName !== "YouTube" && isOtherPlatformsDisabled)
-                ) && togglePlatformSelection(platform.platformName)
-              }
+              onClick={() => togglePlatformSelection(platform.platformName)}
             >
               <img src={platform.imageUrl} alt={platform.platformName} className="w-12 h-12" />
               <span className="text-white font-semibold">{platform.platformName}</span>
@@ -132,9 +169,16 @@ const PostPage = () => {
         <button
           onClick={handlePost}
           className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700"
+          disabled={isPostingToLinkedIn || isPostingToTwitter}
         >
-          Post
+          {(isPostingToLinkedIn || isPostingToTwitter) ? "Posting..." : "Post"}
         </button>
+        {linkedInError && (
+          <p className="text-red-500 mt-2">{linkedInError}</p>
+        )}
+        {twitterError && (
+          <p className="text-red-500 mt-2">{twitterError}</p>
+        )}
       </div>
     </div>
   );

@@ -52,8 +52,12 @@ const ScheduleYoutubeVideo: React.FC = () => {
                 setThumbnailUrl("");
                 setScheduledFor("");
             }
-        } catch (err: any) {
-            setError(err.message || "Failed to schedule video.");
+        } catch (err) {
+            if (err instanceof Error) {
+                setError(err.message ?? "Failed to schedule video.");
+            } else {
+                setError("Failed to schedule video.");
+            }
         }
     };
 
