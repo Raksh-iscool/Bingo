@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Store tokens in session (adapt to your auth system)
-    const response = NextResponse.redirect(new URL("/", request.url));
+    const response = NextResponse.redirect(new URL("/onboarding", request.url));
 
     // Set cookies (or use your session management)
 

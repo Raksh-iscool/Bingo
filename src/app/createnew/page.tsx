@@ -53,7 +53,7 @@ const Page: React.FC = () => {
               <div className='flex items-center justify-between'>Post Now <IconRight className=''/></div>
             </button>
             <button
-              onClick={() => router.push('/youtube-manager')}
+              onClick={() => router.push('/youtube')}
               className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
             >
               Video Manager
