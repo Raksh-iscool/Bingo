@@ -24,7 +24,7 @@ export async function GET() {
   authUrl.searchParams.append('redirect_uri', 'http://localhost:3000/api/auth/twitter/callback');
   authUrl.searchParams.append('code_challenge', codeChallenge);
   authUrl.searchParams.append('code_challenge_method', 'S256');
-
+ 
   // 4. Set secure cookies
   const response = NextResponse.redirect(authUrl.toString());
   response.cookies.set('twitter_code_verifier', codeVerifier, {
