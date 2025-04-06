@@ -1,4 +1,3 @@
-
 "use client";
 import { api } from '@/trpc/react';
 import React from 'react';
@@ -7,7 +6,10 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Button } from "@/components/ui/button";
 import useFormStore, { type Platform, type Model, type Tone } from '@/app/store/FormStore';
 
-const CreatePostForm = () => {
+// Update the type definition
+const CreatePostForm = ({ onPostGenerated }: { 
+  onPostGenerated: (content: Array<{ platform: string; content: string; contentId: number }>) => void 
+}) => {
   const {
     post,
     setPostPlatform,
@@ -27,7 +29,8 @@ const CreatePostForm = () => {
 
   const createPost = api.createPost.useMutation({
     onSuccess: (data) => {
-      setPostResult(data.content);
+      setPostResult(data.contents[0]?.content ?? ''); // Set first content to result
+      onPostGenerated(data.contents); // Pass the entire contents array
       setLoading(false);
       setError("");
     },

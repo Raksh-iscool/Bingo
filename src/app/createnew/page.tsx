@@ -53,10 +53,10 @@ const Page: React.FC = () => {
               <div className='flex items-center justify-between'>Post Now <IconRight className=''/></div>
             </button>
             <button
-              onClick={() => router.push('/youtube-manager')}
+              onClick={() => router.push('/youtube')}
               className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
             >
-              YouTube Manager
+              Video Manager
             </button>
           </div>
         </div>
@@ -70,7 +70,9 @@ const Page: React.FC = () => {
           </TabsList>
           {showPostForm && (
             <TabsContent value="post">
-              <CreatePostForm />
+              <CreatePostForm onPostGenerated={function (content: { platform: string; content: string; contentId: number; }[]): void {
+                throw new Error('Function not implemented.');
+              } } />
             </TabsContent>
           )}
           {showImageForm && (

@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Redirect to home page with success
-    const response = NextResponse.redirect(new URL("/", request.url));
+    const response = NextResponse.redirect(new URL("/onboarding", request.url));
     
     // Clean up state cookie
     response.cookies.delete("linkedin_auth_state");

@@ -96,9 +96,21 @@ const Onboarding = () => {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">Connect Your Accounts</h1>
-          <Button onClick={() => router.push("/dashboard")} className="bg-blue-600 hover:bg-blue-700 text-white">
-            Go to Dashboard
-          </Button>
+          <div className="flex gap-4">
+            <Button 
+              onClick={() => router.push("/createnew")}
+              className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
+            >
+              <span className="hidden sm:inline">Create New Post</span>
+              <span className="sm:hidden">New Post</span>
+            </Button>
+            <Button 
+              onClick={() => router.push("/dashboard")} 
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Go to Dashboard
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -189,8 +201,6 @@ const Onboarding = () => {
             </div>
           ) : selectedPlatform === "LinkedIn" ? (
             <div className="flex flex-col items-center py-4">
-              <div>Checking connection status...</div>
-              <div className="text-green-600 font-semibold">Connected to LinkedIn</div>
               <button
                 onClick={handleLinkedinConnect}
                 className="rounded-full bg-[#1DA1F2] px-6 py-3 font-semibold text-white hover:bg-[#1a8cd8] disabled:opacity-50"
