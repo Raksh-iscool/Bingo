@@ -166,4 +166,3 @@ const GenerateImageForm: React.FC = () => {
 };
 
 export default GenerateImageForm;
-

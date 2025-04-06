@@ -22,8 +22,7 @@ const CreatePostForm = ({ onPostGenerated }: {
     setMaxLength,
     setPostResult,
     setLoading,
-    setError,
-    isLoading,
+    setError,ing,
     error,
   } = useFormStore();
 
